@@ -59,4 +59,4 @@ class CustomImageDataset(Dataset):
             image_x = self.transform(image_x)
         if self.target_transform:
             image_y = self.target_transform(image_y)
-        return image_x.float(), image_y.float()
+        return image_x.float() / 255, image_y.float() / 255
