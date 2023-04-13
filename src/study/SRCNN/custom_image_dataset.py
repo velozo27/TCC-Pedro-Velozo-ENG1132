@@ -1,6 +1,6 @@
 import os
+import torch
 from torch.utils.data import Dataset
-from PIL import Image
 from torchvision.io import read_image
 
 
@@ -15,7 +15,8 @@ class CustomImageDataset(Dataset):
         target_transform (callable, optional): A function/transform that takes in the target and
             transforms it. Default: None.
     """
-    def __init__(self, img_dir, transform=None, target_transform=None):
+
+    def __init__(self, img_dir: str, transform = None, target_transform = None):
         """
         Initializes a new instance of the CustomImageDataset class.
 
@@ -31,7 +32,7 @@ class CustomImageDataset(Dataset):
         self.transform = transform
         self.target_transform = target_transform
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         Returns the number of images in the dataset.
 
@@ -40,7 +41,7 @@ class CustomImageDataset(Dataset):
         """
         return len(self.file_lst)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Returns the image at the specified index in the dataset.
 
@@ -58,4 +59,4 @@ class CustomImageDataset(Dataset):
             image_x = self.transform(image_x)
         if self.target_transform:
             image_y = self.target_transform(image_y)
-        return image_x, image_y
+        return image_x.float(), image_y.float()
