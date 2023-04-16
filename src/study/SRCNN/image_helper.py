@@ -24,6 +24,6 @@ class ImageHelper:
             None
         """
         plt.figure()
-        tensor_np = tensor.numpy()
+        tensor_np = tensor.detach().numpy()
         plt.imshow(tensor_np.transpose((1, 2, 0)))
         plt.show()
