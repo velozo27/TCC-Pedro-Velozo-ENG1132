@@ -1,0 +1,7 @@
+patchify
+torch
+torchvision
+pillow
+tqdm
+matplotlib
+pandas==1.5.3
