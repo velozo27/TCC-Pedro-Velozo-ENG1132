@@ -131,6 +131,13 @@ dmypy.json
 
 .DS_Store
 
+*.png
 
-####
+*.gz
+
+*.pth
+
+*-ubyte
+
+
 datasets/*
