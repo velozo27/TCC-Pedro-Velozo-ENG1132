@@ -1,7 +1,9 @@
 patchify
 torch
 torchvision
+torchmetrics
 pillow
 tqdm
 matplotlib
 pandas==1.5.3
+opencv-python
