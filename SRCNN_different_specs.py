@@ -80,7 +80,8 @@ class RunSRCNN():
                        img1: torch.Tensor,
                        img2: torch.Tensor) -> float:
         psnr = PeakSignalNoiseRatio().to(self.device)
-        return psnr(img1, img2)
+        return psnr(img1.to(self.device)
+        , img2.to(self.device))
 
     def compare_models(self,
                        models: list[dict[str, nn.Module]],
