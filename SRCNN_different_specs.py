@@ -5,7 +5,7 @@ import torch.nn as nn
 import pandas as pd
 from torchmetrics import PeakSignalNoiseRatio
 from torchvision import transforms
-import tqdm
+from tqdm import tqdm
 from PIL import Image
 from loops import train_loop, validation_loop
 
