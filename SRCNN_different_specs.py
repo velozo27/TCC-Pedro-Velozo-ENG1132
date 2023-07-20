@@ -48,9 +48,14 @@ class RunSRCNN():
 
         self.model_df = None
 
-    def clear_all(self) -> None:
+    def clear_all(self, clear_torch_cache=True) -> None:
         self.clear_model_df()
         self.clear_metrics()
+        if clear_torch_cache:
+            self.clear_torch()
+
+    def clear_torch(self) -> None:
+        torch.cuda.empty_cache()
 
     def clear_model_df(self) -> None:
         self.model_df = None
