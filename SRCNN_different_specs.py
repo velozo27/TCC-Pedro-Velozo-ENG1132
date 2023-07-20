@@ -123,7 +123,7 @@ class RunSRCNN():
         return pd.concat([psnr_df, bicubic_psnr_df], axis=1)
 
     def get_model_df(self) -> pd.DataFrame:
-        if self.model_df is None:
+        if self.model_df is None or self.model_df.empty:
             self.model_df = pd.DataFrame({
                 "epoch": self.epoch_array,
                 "time": self.time_array,
