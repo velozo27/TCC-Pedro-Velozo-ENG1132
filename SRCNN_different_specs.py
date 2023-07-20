@@ -79,7 +79,7 @@ class RunSRCNN():
     def calculate_psnr(self,
                        img1: torch.Tensor,
                        img2: torch.Tensor) -> float:
-        psnr = PeakSignalNoiseRatio()
+        psnr = PeakSignalNoiseRatio().to(self.device)
         return psnr(img1, img2)
 
     def compare_models(self,
@@ -126,14 +126,14 @@ class RunSRCNN():
                 model_image = model(bicubic_image.to(self.device))
 
                 # target for PSNR metric
-                targets = transforms.ToTensor()(image)
+                targets = transforms.ToTensor()(image).to(self.device)
 
                 # bicubic PSNR
-                preds = bicubic_image
+                preds = bicubic_image.to(self.device)
                 bicubic_psnr_avg += self.calculate_psnr(preds, targets)
 
                 # model PSNR
-                preds = model_image
+                preds = model_image.to(self.device)
                 model_psnr_avg += self.calculate_psnr(preds, targets)
 
             bicubic_psnr_avg /= number_of_images
