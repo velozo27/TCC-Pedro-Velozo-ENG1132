@@ -93,16 +93,6 @@ class RunSRCNN():
         psnr_array = []
         bicubic_psnr_array = []
 
-        transform = transforms.Compose([
-            transforms.ToTensor(),
-            # resize image to 33x33 and downsample by BICUBIC interpolation
-            transforms.Resize(
-                (image.size[1] // 3, image.size[0] // 3), interpolation=Image.BICUBIC),
-            # resize image to 256x256
-            transforms.Resize(
-                (image.size[1], image.size[0]), interpolation=Image.BICUBIC)
-        ])
-
         for model_dict in models:
             model_psnr_avg = 0
             bicubic_psnr_avg = 0
@@ -113,6 +103,16 @@ class RunSRCNN():
             for img_path in tqdm(images_path):
                 path_in_str = str(img_path)
                 image = Image.open(path_in_str)
+
+                transform = transforms.Compose([
+                    transforms.ToTensor(),
+                    # resize image to 33x33 and downsample by BICUBIC interpolation
+                    transforms.Resize(
+                        (image.size[1] // 3, image.size[0] // 3), interpolation=Image.BICUBIC),
+                    # resize image to 256x256
+                    transforms.Resize(
+                        (image.size[1], image.size[0]), interpolation=Image.BICUBIC)
+                ])
 
                 bicubic_image = transform(image)
                 model_image = model(bicubic_image.to(self.device))
