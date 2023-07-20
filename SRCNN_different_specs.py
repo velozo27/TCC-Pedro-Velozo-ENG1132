@@ -100,9 +100,12 @@ class RunSRCNN():
             model_name = model_dict["name"]
             model = model_dict["model"]
 
-            for img_path in tqdm(images_path):
+            for img_path in tqdm(pathlist):
                 path_in_str = str(img_path)
+                print(img_path)
+                print(path_in_str)
                 image = Image.open(path_in_str)
+                print(image)
 
                 transform = transforms.Compose([
                     transforms.ToTensor(),
@@ -133,15 +136,18 @@ class RunSRCNN():
 
             psnr_array.append({
                 model_name:
-                [model_psnr_avg.detach().numpy()]})
+                [model_psnr_avg]})
+                # [model_psnr_avg.detach().numpy()]})
 
             bicubic_psnr_array.append({
-                model_name: [bicubic_psnr_avg.detach().numpy()]})
+                model_name: [bicubic_psnr_avg]})
+                # model_name: [bicubic_psnr_avg.detach().numpy()]})
+
 
         psnr_df = pd.DataFrame(psnr_array)
-        psnr_df.set_index('', inplace=True)
+        # psnr_df.set_index('', inplace=True)
         bicubic_psnr_df = pd.DataFrame(bicubic_psnr_array)
-        bicubic_psnr_df.set_index('', inplace=True)
+        # bicubic_psnr_df.set_index('', inplace=True)
 
         return pd.concat([psnr_df, bicubic_psnr_df], axis=1)
 
