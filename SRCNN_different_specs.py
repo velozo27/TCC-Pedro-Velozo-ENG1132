@@ -48,6 +48,20 @@ class RunSRCNN():
 
         self.model_df = None
 
+    def clear_all(self) -> None:
+        self.clear_model_df()
+        self.clear_metrics()
+
+    def clear_model_df(self) -> None:
+        self.model_df = None
+
+    def clear_metrics(self) -> None:
+        self.epoch_array.clear()
+        self.time_array.clear()
+        self.lr_array.clear()
+        self.train_loss_array.clear()
+        self.validation_loss_array.clear()
+
     def get_metrics(self) -> tuple[list[int], list[float], list[float], list[float], list[float]]:
         return self.epoch_array, self.time_array, self.lr_array, self.train_loss_array, self.validation_loss_array
                     
