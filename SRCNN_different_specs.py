@@ -11,11 +11,15 @@ from loops import train_loop, validation_loop
 
 
 class SRCNN(nn.Module):
-    def __init__(self, f2=5):
+    def __init__(self, f2=1):
         super(SRCNN, self).__init__()
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=9, padding=(2, 2))
-        self.conv2 = nn.Conv2d(64, 32, kernel_size=f2, padding=(2, 2))
-        self.conv3 = nn.Conv2d(32, 3, kernel_size=5, padding=(2, 2))
+        padding = [2,2,2]
+        if f2 == 5:
+            padding = [9 // 2, 5 // 2, 5 // 2]
+
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=9, padding=padding[0])
+        self.conv2 = nn.Conv2d(64, 32, kernel_size=f2, padding=padding[1])
+        self.conv3 = nn.Conv2d(32, 3, kernel_size=5, padding=padding[2])
 
         self.relu = nn.ReLU(inplace=True)
 
