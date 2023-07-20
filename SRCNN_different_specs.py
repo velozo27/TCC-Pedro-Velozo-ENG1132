@@ -89,21 +89,26 @@ class RunSRCNN():
 
         pathlist = Path(images_path).rglob('*.png')
         number_of_images = len(list(pathlist))
+        print(f"number_of_images = {number_of_images}")
 
-        psnr_array = []
-        bicubic_psnr_array = []
+        psnr_dict = {}
+        bicubic_psnr_dict = {}
 
         for model_dict in models:
+            print(f"model_dict = {model_dict}")
             model_psnr_avg = 0
             bicubic_psnr_avg = 0
 
             model_name = model_dict["name"]
             model = model_dict["model"]
 
+            pathlist = Path(images_path).rglob('*.png')
+    
             for img_path in tqdm(pathlist):
                 path_in_str = str(img_path)
-                print(img_path)
-                print(path_in_str)
+                print('img_path =', img_path)
+                print('path_in_str =', path_in_str)
+                
                 image = Image.open(path_in_str)
                 print(image)
 
@@ -134,22 +139,32 @@ class RunSRCNN():
             bicubic_psnr_avg /= number_of_images
             model_psnr_avg /= number_of_images
 
-            psnr_array.append({
-                model_name:
-                [model_psnr_avg]})
+            psnr_dict[model_name] = model_psnr_avg.item() 
                 # [model_psnr_avg.detach().numpy()]})
 
-            bicubic_psnr_array.append({
-                model_name: [bicubic_psnr_avg]})
+            bicubic_psnr_dict[model_name] = bicubic_psnr_avg.item()
                 # model_name: [bicubic_psnr_avg.detach().numpy()]})
 
 
-        psnr_df = pd.DataFrame(psnr_array)
+        print('\n\n psnr_dict')
+        print(psnr_dict)
+
+        psnr_df = pd.DataFrame([psnr_dict], index=['PSNR'])
         # psnr_df.set_index('', inplace=True)
-        bicubic_psnr_df = pd.DataFrame(bicubic_psnr_array)
+
+        print('\n\n bicubic_psnr_dict')
+        print(bicubic_psnr_dict)
+
+        bicubic_psnr_df = pd.DataFrame([bicubic_psnr_dict], index=['Bicubic PSNR'])
         # bicubic_psnr_df.set_index('', inplace=True)
 
-        return pd.concat([psnr_df, bicubic_psnr_df], axis=1)
+        print('\n\npsnr_df')
+        print(psnr_df)
+
+        print('\n\nbicubic_psnr_df')
+        print(bicubic_psnr_df)
+
+        return pd.concat([psnr_df, bicubic_psnr_df])
 
     def get_model_df(self) -> pd.DataFrame:
         if self.model_df is None or self.model_df.empty:
@@ -202,3 +217,39 @@ class RunSRCNN():
             self.epoch_array.append(current_epoch)
             self.time_array.append(elapsed_time)
             self.lr_array.append(optimizer.param_groups[0]['lr'])
+
+def main():
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    lr = 1e-3
+
+    model_f2_5 = SRCNN(f2=5).to(device)
+    optimizer_f2_5 = torch.optim.Adam(model_f2_5.parameters(), lr=lr)
+    scheduler_f2_5 = torch.optim.lr_scheduler.LinearLR(
+    optimizer_f2_5,
+    start_factor=1.0,
+    end_factor=0.01,
+    total_iters=10)
+
+    model_f2_1 = SRCNN(f2=1).to(device)
+    optimizer_f2_1 = torch.optim.Adam(model_f2_1.parameters(), lr=lr)
+    scheduler_f2_1 = torch.optim.lr_scheduler.LinearLR(
+    optimizer_f2_1,
+    start_factor=1.0,
+    end_factor=0.01,
+    total_iters=10)
+
+    run_srcnn = RunSRCNN()
+    path = f"./datasets/Set14/"
+    df = run_srcnn.compare_models(
+        [{'name': 'model_f2_1', 'model': model_f2_1}, {'name': 'model_f2_5', 'model': model_f2_5}],
+        path,
+    )
+
+    print(df)
+
+    
+
+
+if __name__ == "__main__":
+    main()
+ 
