@@ -123,7 +123,6 @@ class RunSRCNN():
                 path_in_str = str(img_path)
                 
                 image = Image.open(path_in_str)
-                print(image)
 
                 transform = transforms.Compose([
                     transforms.ToTensor(),
