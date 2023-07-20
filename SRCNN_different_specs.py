@@ -8,6 +8,7 @@ from torchvision import transforms
 from tqdm import tqdm
 from PIL import Image
 from loops import train_loop, validation_loop
+from torchmetrics.image import StructuralSimilarityIndexMeasure
 
 
 class SRCNN(nn.Module):
@@ -83,6 +84,17 @@ class RunSRCNN():
         return psnr(img1.to(self.device)
         , img2.to(self.device))
 
+    def calculate_ssim(self,
+                        img1: torch.Tensor,
+                        img2: torch.Tensor) -> float:
+
+        # add batch dimension, since ssim expects a batch of images and not a single image. And unsqueeze adds a dimension at the specified position
+        img1 = img1.unsqueeze(0)
+        img2 = img2.unsqueeze(0)                
+                    
+        ssim = StructuralSimilarityIndexMeasure(data_range=1.0).to(self.device)
+        return ssim(img1.to(self.device), img2.to(self.device))
+
     def compare_models(self,
                        models: list[dict[str, nn.Module]],
                        images_path: str
@@ -90,15 +102,17 @@ class RunSRCNN():
 
         pathlist = Path(images_path).rglob('*.png')
         number_of_images = len(list(pathlist))
-        print(f"number_of_images = {number_of_images}")
-
+    
         psnr_dict = {}
         bicubic_psnr_dict = {}
+        ssim_dict = {}
+        bicubic_ssim_dict = {}
 
         for model_dict in models:
-            print(f"model_dict = {model_dict}")
             model_psnr_avg = 0
             bicubic_psnr_avg = 0
+            model_ssim_avg = 0
+            bicubic_ssim_avg = 0
 
             model_name = model_dict["name"]
             model = model_dict["model"]
@@ -107,8 +121,6 @@ class RunSRCNN():
     
             for img_path in tqdm(pathlist):
                 path_in_str = str(img_path)
-                print('img_path =', img_path)
-                print('path_in_str =', path_in_str)
                 
                 image = Image.open(path_in_str)
                 print(image)
@@ -132,40 +144,29 @@ class RunSRCNN():
                 # bicubic PSNR
                 preds = bicubic_image.to(self.device)
                 bicubic_psnr_avg += self.calculate_psnr(preds, targets)
+                bicubic_ssim_avg += self.calculate_ssim(preds, targets)
 
                 # model PSNR
                 preds = model_image.to(self.device)
                 model_psnr_avg += self.calculate_psnr(preds, targets)
+                model_ssim_avg += self.calculate_ssim(preds, targets)
 
             bicubic_psnr_avg /= number_of_images
             model_psnr_avg /= number_of_images
+            bicubic_ssim_avg /= number_of_images
+            model_ssim_avg /= number_of_images
 
             psnr_dict[model_name] = model_psnr_avg.item() 
-                # [model_psnr_avg.detach().numpy()]})
-
             bicubic_psnr_dict[model_name] = bicubic_psnr_avg.item()
-                # model_name: [bicubic_psnr_avg.detach().numpy()]})
+            ssim_dict[model_name] = model_ssim_avg.item()
+            bicubic_ssim_dict[model_name] = bicubic_ssim_avg.item()
 
-
-        print('\n\n psnr_dict')
-        print(psnr_dict)
-
-        psnr_df = pd.DataFrame([psnr_dict], index=['PSNR'])
-        # psnr_df.set_index('', inplace=True)
-
-        print('\n\n bicubic_psnr_dict')
-        print(bicubic_psnr_dict)
-
+        psnr_df = pd.DataFrame([psnr_dict], index=['PSNR'])        
         bicubic_psnr_df = pd.DataFrame([bicubic_psnr_dict], index=['Bicubic PSNR'])
-        # bicubic_psnr_df.set_index('', inplace=True)
-
-        print('\n\npsnr_df')
-        print(psnr_df)
-
-        print('\n\nbicubic_psnr_df')
-        print(bicubic_psnr_df)
-
-        return pd.concat([psnr_df, bicubic_psnr_df])
+        ssim_df = pd.DataFrame([ssim_dict], index=['SSIM'])
+        bicubic_ssim_df = pd.DataFrame([bicubic_ssim_dict], index=['Bicubic SSIM'])
+    
+        return pd.concat([psnr_df, bicubic_psnr_df, ssim_df, bicubic_ssim_df])
 
     def get_model_df(self) -> pd.DataFrame:
         if self.model_df is None or self.model_df.empty:
