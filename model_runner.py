@@ -7,39 +7,19 @@ from torchmetrics import PeakSignalNoiseRatio
 from torchvision import transforms
 from tqdm import tqdm
 from PIL import Image
+from SRCNN import SRCNN
 from loops import train_loop, validation_loop
 from torchmetrics.image import StructuralSimilarityIndexMeasure
 import matplotlib.pyplot as plt
 from image_helper import ImageHelper
 
-
-class SRCNN(nn.Module):
-    def __init__(self, f2=1):
-        super(SRCNN, self).__init__()
-        padding = [2,2,2]
-        if f2 == 5:
-            padding = [9 // 2, 5 // 2, 5 // 2]
-
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=9, padding=padding[0])
-        self.conv2 = nn.Conv2d(64, 32, kernel_size=f2, padding=padding[1])
-        self.conv3 = nn.Conv2d(32, 3, kernel_size=5, padding=padding[2])
-
-        self.relu = nn.ReLU(inplace=True)
-
-    def forward(self, x) -> torch.Tensor:
-        x = self.relu(self.conv1(x))
-        x = self.relu(self.conv2(x))
-        x = self.conv3(x)
-        return x
-
-
-class RunSRCNN():
+class ModelRunner():
     def __init__(self, model=None, device="cuda" if torch.cuda.is_available() else "cpu", train_loop=train_loop, validation_loop=validation_loop):
         self.device = device
 
-        self.model_f2_5 = SRCNN(f2=5).to(device)
-        self.model_f2_1 = SRCNN(f2=1).to(device)
-
+        # not used for now
+        self.model = model
+        
         self.train_loop = train_loop
         self.validation_loop = validation_loop
 
@@ -72,14 +52,13 @@ class RunSRCNN():
 
     def get_metrics(self) -> tuple[list[int], list[float], list[float], list[float], list[float]]:
         return self.epoch_array, self.time_array, self.lr_array, self.train_loss_array, self.validation_loss_array
-                    
+
+    # TODO: rever se está funcionando                    
     def load_model(self, model: nn.Module, model_weights_path: str) -> torch.nn.Module:        
         if torch.cuda.is_available():
             return torch.load(model_weights_path)
         else:
             return torch.load(model_weights_path ,map_location ='cpu')
-
-
 
         # try:
         #     model.load_state_dict(torch.load(model_weights_path))
@@ -97,6 +76,18 @@ class RunSRCNN():
         fig = plt.figure(figsize=(10, 10))
         for df in dfs:
             plt.plot(df['epoch'], df['time'])
+        plt.title('Time per Epoch')
+        plt.xlabel('Epoch')
+        plt.ylabel('Time (s)')
+        plt.legend()
+        plt.show()
+
+    def plot_time_per_epoch_comparision(self, dfs_data: list[dict]) -> None:
+        fig = plt.figure(figsize=(10, 10))
+        for data in dfs_data:
+            label = data['label']
+            df = data['df']
+            plt.plot(df['epoch'], df['time'], label=label)
         plt.title('Time per Epoch')
         plt.xlabel('Epoch')
         plt.ylabel('Time (s)')
@@ -121,6 +112,18 @@ class RunSRCNN():
         plt.ylabel('Loss')
         plt.legend()
         plt.show()
+
+    def plot_lr_comparison(self, dfs: list[dict[str, pd.DataFrame]]) -> None:
+        fig = plt.figure(figsize=(10, 10))
+        for df_dict in dfs:
+            df = df_dict["df"]
+            label = df_dict["label"]
+            plt.plot(df['epoch'], df['lr'], label=f'{label} lr')
+        plt.title('Learning Rate')
+        plt.xlabel('Epoch')
+        plt.ylabel('Learning Rate')
+        plt.legend()
+        plt.show()        
 
     def plot_train_validation_loss_comparision(self,
         dfs: list[dict[str, pd.DataFrame]],
@@ -294,13 +297,15 @@ class RunSRCNN():
             self.lr_array.append(optimizer.param_groups[0]['lr'])
 
 def main():
+    # Just some example code to test the functions
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
     lr = 1e-3
 
     model_f2_5 = SRCNN(f2=5).to(device)
     model_f2_1 = SRCNN(f2=1).to(device)
    
-    run_srcnn = RunSRCNN()
+    run_srcnn = ModelRunner()
     image_helper = ImageHelper()
 
     # torch.load('./results/srcnn/trained_models/model_f2_5.pth', map_location ='cpu')
@@ -308,18 +313,18 @@ def main():
     model_f2_5 = run_srcnn.load_model(model_f2_5, "./results/srcnn/trained_models/model_f2_5.pth")
     df_f2_5 = run_srcnn.load_df("./results/srcnn/dataframes/model_f2_5.csv")
 
-    model_f2_1 = run_srcnn.load_model(model_f2_1, "./results/srcnn/trained_models/model_f2_1.pth")
-    df_f2_1 = run_srcnn.load_df("./results/srcnn/dataframes/model_f2_1.csv")
+    # model_f2_1 = run_srcnn.load_model(model_f2_1, "./results/srcnn/trained_models/model_f2_1.pth")
+    # # df_f2_1 = run_srcnn.load_df("./results/srcnn/dataframes/model_f2_1.csv")
 
     run_srcnn.plot_train_validation_loss_from_df(df_f2_5)
-    run_srcnn.plot_train_validation_loss_from_df(df_f2_1)
+    # # run_srcnn.plot_train_validation_loss_from_df(df_f2_1)
 
-    run_srcnn.plot_train_validation_loss_comparision(
-        dfs=[
-            {"df": df_f2_5, "label": "f2_5"},
-            {"df": df_f2_1, "label": "f2_1"}
-        ]
-    )
+    # # run_srcnn.plot_train_validation_loss_comparision(
+    # #     dfs=[
+    # #         {"df": df_f2_5, "label": "f2_5"},
+    # #         {"df": df_f2_1, "label": "f2_1"}
+    # #     ]
+    # # )
     
 
 
