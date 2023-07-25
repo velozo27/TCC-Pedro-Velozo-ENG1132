@@ -69,17 +69,9 @@ def create_valid_image_patches(img_dir: str, patch_size, output_path: str, num_p
         except IsADirectoryError:
           continue
 
-def is_image_valid(image: Image, frequency_threshold=FREQUENCY_THRESHOLD) -> bool:
-  """
-  Checks if an image is valid based on its frequency content.
-
-  Args:
-      image (Image): The input image to validate.
-      frequency_threshold (int): The threshold for the mean frequency magnitude. Defaults to 2000.
-
-  Returns:
-      bool: True if the image is valid, False otherwise.
-  """
+def get_frequency_magnitude_mean(image: Image or str) -> float:
+  if type(image) == str:
+    image = Image.open(image)
 
   image = image.convert('L')  # convert image to grayscale
 
@@ -106,9 +98,24 @@ def is_image_valid(image: Image, frequency_threshold=FREQUENCY_THRESHOLD) -> boo
   imageThen = cv2.magnitude(imageThen[:, :, 0], imageThen[:, :, 1])
 
   np_imageThen = np.array(imageThen)
-  np.mean(np_imageThen)
+  return np.mean(np_imageThen)
 
-  return np.mean(np_imageThen) > frequency_threshold
+
+def is_image_valid(image: Image, frequency_threshold=FREQUENCY_THRESHOLD) -> bool:
+  """
+  Checks if an image is valid based on its frequency content.
+
+  Args:
+      image (Image): The input image to validate.
+      frequency_threshold (int): The threshold for the mean frequency magnitude. Defaults to 2000.
+
+  Returns:
+      bool: True if the image is valid, False otherwise.
+  """
+
+  frequency_magnitude_mean = get_frequency_magnitude_mean(image)
+
+  return frequency_magnitude_mean > frequency_threshold
 
 def create_image_patches(img_dir: str, patch_size, output_path: str, num_patches: int) -> None:
     """
