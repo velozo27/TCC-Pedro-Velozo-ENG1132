@@ -43,8 +43,13 @@ class ImageHelper:
         else:
             tensor_np = tensor.numpy()
 
-        plt.imshow(tensor_np.transpose((1, 2, 0)))
-        plt.show()
+        try:
+            plt.imshow(tensor_np.transpose((1, 2, 0)))
+            plt.show()
+        except:
+            tensor_np = np.squeeze(tensor_np, axis=0)
+            plt.imshow(tensor_np.transpose((1, 2, 0)))
+            plt.show()
 
 
     def show_tensors_side_by_side(
@@ -113,7 +118,8 @@ class ImageHelper:
     
     def downsample_and_upsample_image_as_tensor(
         self,
-        image: Image or str, downsample_factor: int, interpolation=Image.BICUBIC
+        image: Image or str, downsample_factor: int, interpolation=Image.BICUBIC,
+        unsqueeze: bool = False,
     ) -> torch.Tensor:
         if type(image) == str:
             image = Image.open(image)
@@ -126,6 +132,10 @@ class ImageHelper:
             transforms.Resize((new_height, new_width), interpolation=interpolation),
             transforms.Resize((height, width), interpolation=interpolation),
         ])
+
+        if unsqueeze:
+            return transform(image).unsqueeze(0)
+
         return transform(image)
     
     def downsample_and_upsample_image_as_tensor_and_show(
@@ -142,11 +152,12 @@ class ImageHelper:
         model: torch.nn.Module,
         image: Image or str,
         downsample_factor: int,
+        unsqueeze: bool = False,
     ) -> torch.Tensor:
         if type(image) == str:
             image = Image.open(image)
 
-        tensor = self.downsample_and_upsample_image_as_tensor(image, downsample_factor)
+        tensor = self.downsample_and_upsample_image_as_tensor(image, downsample_factor, unsqueeze=unsqueeze)
 
         return model(tensor)
 
@@ -155,8 +166,9 @@ class ImageHelper:
         model: torch.nn.Module,
         image: Image or str,
         downsample_factor: int,
+        unsqueeze: bool = False,
     ) -> None:
-        tensor = self.apply_model_to_image(model, image, downsample_factor)
+        tensor = self.apply_model_to_image(model, image, downsample_factor, unsqueeze=unsqueeze)
         self.show_tensor_as_image(tensor)
 
     def show_tensor_as_images_side_by_side(self, tensors: list[dict[str, torch.Tensor]]) -> None:

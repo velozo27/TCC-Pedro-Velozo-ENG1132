@@ -129,6 +129,8 @@ class DeepUpProjectionBlock(nn.Module):
             nn.PReLU(),
         )
 
+        self._initialize_weights(kernel_size, channels)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         deep_conv = self.deep_conv(x)
         conv1 = self.conv1(deep_conv)
@@ -139,6 +141,21 @@ class DeepUpProjectionBlock(nn.Module):
         out = torch.add(conv3, conv1)
 
         return out
+    
+    def _initialize_weights(self, filter_size, num_filters):
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                # Compute the std for weight initialization
+                # ft = filter_size
+                # nt = num_filters
+                # nl = ft**2 * nt
+                # std = (ft**2) / nl
+                
+                # Initialize the weights with a normal distribution
+                nn.init.normal_(m.weight, mean=0, std=0.111)
+                if m.bias is not None:
+                    # Initialize the biases with zeros
+                    nn.init.zeros_(m.bias)
 
 
 class DownProjectionBlock(nn.Module):

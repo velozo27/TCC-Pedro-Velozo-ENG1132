@@ -19,7 +19,7 @@ class CustomImageDataset(Dataset):
             transforms it. Default: None.
     """
 
-    def __init__(self, img_dir: str, patches_per_image = None | int, transform = None, target_transform = None, use_patches = True, device="cuda" if torch.cuda.is_available() else "cpu" ):
+    def __init__(self, img_dir: str, patches_per_image = None | int, transform = None, target_transform = None, use_patches = True, device="cuda" if torch.cuda.is_available() else "cpu", tensor_size=33):
         """
         Initializes a new instance of the CustomImageDataset class.
 
@@ -35,6 +35,7 @@ class CustomImageDataset(Dataset):
         self.target_transform = target_transform
         self.patches_per_image = patches_per_image
         self.device = device
+        self.tensor_size = tensor_size
         
         self.file_list_tensor = self.create_tensors_from_images()
         self.file_list_tensor.to(device)
@@ -43,7 +44,7 @@ class CustomImageDataset(Dataset):
       number_of_images = self._get_number_of_images_in_folder(f"{self.img_dir}/patches")
 
       # creating the empty tensor
-      image_tensors = torch.empty((number_of_images, 3, 33, 33))
+      image_tensors = torch.empty((number_of_images, 3, self.tensor_size, self.tensor_size))
 
       current_tensor_index = 0
 
