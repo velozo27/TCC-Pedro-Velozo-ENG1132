@@ -50,7 +50,7 @@ class ModelRunner():
         self.train_loss_array.clear()
         self.validation_loss_array.clear()
 
-    def get_metrics(self) -> tuple[list[int], list[float], list[float], list[float], list[float]]:
+    def get_metrics(self):
         return self.epoch_array, self.time_array, self.lr_array, self.train_loss_array, self.validation_loss_array
 
     # TODO: rever se está funcionando                    
@@ -64,6 +64,11 @@ class ModelRunner():
         #     model.load_state_dict(torch.load(model_weights_path))
         # except:
 
+    def save_checkpoint(self):
+        # TODO: implement -> https://pytorch.org/tutorials/recipes/recipes/saving_and_loading_a_general_checkpoint.html
+        pass
+
+
     def save_model_weights(self, model: nn.Module, model_weights_path: str) -> None:
         torch.save(model.state_dict(), model_weights_path)
 
@@ -71,7 +76,7 @@ class ModelRunner():
         pass
 
     def plot_time_per_epoch_comparision(self, 
-        dfs: list[pd.DataFrame],
+        dfs
     ) -> None:
         fig = plt.figure(figsize=(10, 10))
         for df in dfs:
@@ -82,7 +87,7 @@ class ModelRunner():
         plt.legend()
         plt.show()
 
-    def plot_time_per_epoch_comparision(self, dfs_data: list[dict]) -> None:
+    def plot_time_per_epoch_comparision(self, dfs_data) -> None:
         fig = plt.figure(figsize=(10, 10))
         for data in dfs_data:
             label = data['label']
@@ -103,6 +108,9 @@ class ModelRunner():
         plt.show()
 
     def plot_train_validation_loss_from_df(self, df: pd.DataFrame, show_lr=True) -> None:
+        if df is None:
+            df = self.get_model_df()
+
         fig = plt.figure(figsize=(10, 10))
         plt.plot(df['epoch'], df['train_loss'], label='train_loss')
         plt.plot(df['epoch'], df['validation_loss'], label='validation_loss')
@@ -113,7 +121,7 @@ class ModelRunner():
         plt.legend()
         plt.show()
 
-    def plot_lr_comparison(self, dfs: list[dict[str, pd.DataFrame]]) -> None:
+    def plot_lr_comparison(self, dfs) -> None:
         fig = plt.figure(figsize=(10, 10))
         for df_dict in dfs:
             df = df_dict["df"]
@@ -126,7 +134,7 @@ class ModelRunner():
         plt.show()        
 
     def plot_train_validation_loss_comparision(self,
-        dfs: list[dict[str, pd.DataFrame]],
+        dfs,
         show_lr=True
     ) -> None:
         fig = plt.figure(figsize=(10, 10))
@@ -175,7 +183,7 @@ class ModelRunner():
         return ssim(img1.to(self.device), img2.to(self.device))
 
     def compare_models(self,
-                       models: list[dict[str, nn.Module]],
+                       models,
                        images_path: str
                        ) -> pd.DataFrame:
 
