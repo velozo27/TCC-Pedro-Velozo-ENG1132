@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from torchvision import transforms
 import numpy as np
+from torchvision.utils import save_image
 
 
 class ImageHelper:
@@ -115,6 +116,24 @@ class ImageHelper:
     ) -> None:
         tensor = self.downsample_image_as_tensor(image, downsample_factor, interpolation)
         self.show_tensor_as_image(tensor)
+    
+    def save_tensor_as_image(self, tensor: torch.Tensor, save_path: str) -> None:
+        img = tensor
+
+        if not save_path.endswith('.png'):
+            save_path += '.png'
+
+        save_image(img, save_path)
+
+    def downsample_image_as_tensor_and_show_and_save(
+        self,
+        image: Image or str, downsample_factor: int, interpolation=Image.BICUBIC, save_path: str = None
+    ) -> None:
+        tensor = self.downsample_image_as_tensor(image, downsample_factor, interpolation)
+        self.show_tensor_as_image(tensor)
+
+        if save_path:
+            self.save_tensor_as_image(tensor, save_path)
     
     def downsample_and_upsample_image_as_tensor(
         self,
