@@ -40,7 +40,7 @@ class ImageHelper:
         plt.figure()
 
         if torch.is_tensor(tensor):
-            tensor_np = tensor.detach().numpy()
+            tensor_np = tensor.cpu().detach().numpy()
         else:
             tensor_np = tensor.numpy()
 
@@ -54,7 +54,7 @@ class ImageHelper:
 
 
     def show_tensors_side_by_side(
-        tensors: list[dict[str, torch.Tensor]],
+        tensors,
     ) -> None:
         """
         Displays a list of images represented as PyTorch tensors side by side.
@@ -96,7 +96,8 @@ class ImageHelper:
 
     def downsample_image_as_tensor(
         self,
-        image: Image or str, downsample_factor: int, interpolation=Image.LINEAR
+        image: Image or str, downsample_factor: int, interpolation=Image.BICUBIC,
+        unsqueeze: bool = False,
     ) -> torch.Tensor:
         if type(image) == str:
             image = Image.open(image)
@@ -108,11 +109,15 @@ class ImageHelper:
                 transforms.ToTensor(),
                 transforms.Resize((new_height, new_width), interpolation=interpolation),
             ])
+        
+        if unsqueeze:
+            return transform(image).unsqueeze(0)
+        
         return transform(image)
     
     def downsample_image_as_tensor_and_show(
         self,
-        image: Image or str, downsample_factor: int, interpolation=Image.LINEAR
+        image: Image or str, downsample_factor: int, interpolation='LINEAR'
     ) -> None:
         tensor = self.downsample_image_as_tensor(image, downsample_factor, interpolation)
         self.show_tensor_as_image(tensor)
@@ -171,14 +176,20 @@ class ImageHelper:
         model: torch.nn.Module,
         image: Image or str,
         downsample_factor: int,
-        unsqueeze: bool = False,
+        unsqueeze = False,
+        device="cuda" if torch.cuda.is_available() else "cpu",
+        should_upsample = True,
     ) -> torch.Tensor:
         if type(image) == str:
             image = Image.open(image)
 
-        tensor = self.downsample_and_upsample_image_as_tensor(image, downsample_factor, unsqueeze=unsqueeze)
+        # usefull for SRCNN
+        if should_upsample:
+            tensor = self.downsample_and_upsample_image_as_tensor(image, downsample_factor, unsqueeze=unsqueeze)
+        else: 
+            tensor = self.downsample_image_as_tensor(image, downsample_factor, unsqueeze=unsqueeze)
 
-        return model(tensor)
+        return model(tensor.to(device))
 
     def apply_model_to_image_and_show(
         self,
@@ -186,11 +197,13 @@ class ImageHelper:
         image: Image or str,
         downsample_factor: int,
         unsqueeze: bool = False,
+        device="cuda" if torch.cuda.is_available() else "cpu",
+        should_upsample = True,
     ) -> None:
-        tensor = self.apply_model_to_image(model, image, downsample_factor, unsqueeze=unsqueeze)
+        tensor = self.apply_model_to_image(model, image, downsample_factor, unsqueeze=unsqueeze, device=device, should_upsample=should_upsample)
         self.show_tensor_as_image(tensor)
 
-    def show_tensor_as_images_side_by_side(self, tensors: list[dict[str, torch.Tensor]]) -> None:
+    def show_tensor_as_images_side_by_side(self, tensors) -> None:
         num_tensors = len(tensors)
         fig, axes = plt.subplots(nrows=1, ncols=num_tensors, figsize=(14, 8))
 
@@ -199,11 +212,16 @@ class ImageHelper:
             label = tensor_dict['label']
         
             try: 
-                tensor_np = tensor.numpy()
+                tensor_np = tensor.cpu().numpy()
             except:
-                tensor_np = tensor.detach().numpy()
+                tensor_np = tensor.cpu().detach().numpy()
 
-            axes[index].imshow(tensor_np.transpose((1, 2, 0)), aspect='auto')
+            try:
+                axes[index].imshow(tensor_np.transpose((1, 2, 0)), aspect='auto')
+            except:
+                tensor_np = np.squeeze(tensor_np, axis=0)
+                axes[index].imshow(tensor_np.transpose((1, 2, 0)), aspect='auto')
+
             axes[index].set_title(label)
 
         plt.show()

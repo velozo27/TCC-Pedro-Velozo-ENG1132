@@ -19,7 +19,7 @@ class CustomImageDataset(Dataset):
             transforms it. Default: None.
     """
 
-    def __init__(self, img_dir: str, patches_per_image = None | int, transform = None, target_transform = None, use_patches = True, device="cuda" if torch.cuda.is_available() else "cpu", tensor_size=33, max_number_of_images=None):
+    def __init__(self, img_dir: str, patches_per_image = None or int, transform = None, target_transform = None, use_patches = True, device="cuda" if torch.cuda.is_available() else "cpu", tensor_size=33, max_number_of_images=None):
         """
         Initializes a new instance of the CustomImageDataset class.
 
@@ -30,6 +30,8 @@ class CustomImageDataset(Dataset):
             target_transform (callable, optional): A function/transform that takes in the target and
                 transforms it. Default: None.
         """
+        print(f'Creating Dataset based on folder: {img_dir}')
+
         self.img_dir = img_dir
         self.transform = transform
         self.target_transform = target_transform
@@ -42,6 +44,8 @@ class CustomImageDataset(Dataset):
         self.file_list_tensor = self.create_tensors_from_images()
 
         self.file_list_tensor.to(device)
+        
+        print(f'Creating Dataset based on folder: {img_dir}')
 
     def create_tensors_from_images(self):
       number_of_images = self._get_number_of_images_in_folder(f"{self.img_dir}/patches")
@@ -90,7 +94,7 @@ class CustomImageDataset(Dataset):
         """
         return self._get_number_of_images_in_folder(f"{self.img_dir}/patches")
 
-    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, idx: int) -> [torch.Tensor, torch.Tensor]:
         """
         Returns the image at the specified index in the dataset.
 
