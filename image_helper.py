@@ -203,7 +203,7 @@ class ImageHelper:
         tensor = self.apply_model_to_image(model, image, downsample_factor, unsqueeze=unsqueeze, device=device, should_upsample=should_upsample)
         self.show_tensor_as_image(tensor)
 
-    def show_tensor_as_images_side_by_side(self, tensors) -> None:
+    def show_tensor_as_images_side_by_side(self, tensors, show_grid=True) -> None:
         num_tensors = len(tensors)
         fig, axes = plt.subplots(nrows=1, ncols=num_tensors, figsize=(14, 8))
 
@@ -220,10 +220,13 @@ class ImageHelper:
                 axes[index].imshow(tensor_np.transpose((1, 2, 0)), aspect='auto')
             except:
                 tensor_np = np.squeeze(tensor_np, axis=0)
-                axes[index].imshow(tensor_np.transpose((1, 2, 0)), aspect='auto')
+                axes[index].imshow(tensor_np.transpose((1, 2, 0)), aspect='auto') 
 
             axes[index].set_title(label)
 
+            if not show_grid:
+                axes[index].axis('off') 
+ 
         plt.show()
 
     def get_differance_between_tensors(self, tensor1: torch.Tensor, tensor2: torch.Tensor) -> torch.Tensor:
