@@ -13,13 +13,14 @@ from torchmetrics.image import StructuralSimilarityIndexMeasure
 import matplotlib.pyplot as plt
 from image_helper import ImageHelper
 
+
 class ModelRunner():
     def __init__(self, model=None, device="cuda" if torch.cuda.is_available() else "cpu", train_loop=train_loop, validation_loop=validation_loop):
         self.device = device
 
         # not used for now
         self.model = model
-        
+
         self.train_loop = train_loop
         self.validation_loop = validation_loop
 
@@ -53,16 +54,12 @@ class ModelRunner():
     def get_metrics(self):
         return self.epoch_array, self.time_array, self.lr_array, self.train_loss_array, self.validation_loss_array
 
-    # TODO: rever se está funcionando                    
-    def load_model(self, model: nn.Module, model_weights_path: str) -> torch.nn.Module:        
-        if torch.cuda.is_available():
-            return torch.load(model_weights_path)
-        else:
-            return torch.load(model_weights_path ,map_location ='cpu')
-
-        # try:
-        #     model.load_state_dict(torch.load(model_weights_path))
-        # except:
+    # TODO: rever se está funcionando
+    def load_model(self, model: nn.Module, model_weights_path: str) -> torch.nn.Module:
+        try:
+            model.load_state_dict(torch.load(model_weights_path))
+        except:
+            model.load_state_dict(torch.load(model_weights_path, map_location=torch.device('cpu')))
 
     def save_checkpoint(self, model: nn.Module, optimizer: torch.optim.Optimizer, epoch: int, loss: float, path: str) -> None:
         torch.save({
@@ -70,8 +67,8 @@ class ModelRunner():
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': loss,
-            }, path)
-        
+        }, path)
+
     def load_checkpoint(self, model: nn.Module, optimizer: torch.optim.Optimizer, path: str) -> None:
         checkpoint = torch.load(path)
         model.load_state_dict(checkpoint['model_state_dict'])
@@ -81,15 +78,25 @@ class ModelRunner():
 
         return model, optimizer, epoch, loss
 
+    def load_essential_data_from_pth_and_csv(self,
+                                             model: nn.Module,
+                                             pth_path: str, csv_path: str) -> (nn.Module, pd.DataFrame):
+        model = self.load_model(model, pth_path)
+        df = self.load_df(csv_path)
+
+        return model, df
+
+
+
     def save_model_weights(self, model: nn.Module, model_weights_path: str) -> None:
         torch.save(model.state_dict(), model_weights_path)
 
     def create_train_loss_plot_from_df_path(self, model_df_path: str, plot_path: str) -> None:
         pass
 
-    def plot_time_per_epoch_comparision(self, 
-        dfs
-    ) -> None:
+    def plot_time_per_epoch_comparision(self,
+                                        dfs
+                                        ) -> None:
         fig = plt.figure(figsize=(10, 10))
         for df in dfs:
             plt.plot(df['epoch'], df['time'])
@@ -143,18 +150,20 @@ class ModelRunner():
         plt.xlabel('Epoch')
         plt.ylabel('Learning Rate')
         plt.legend()
-        plt.show()        
+        plt.show()
 
     def plot_train_validation_loss_comparision(self,
-        dfs,
-        show_lr=True
-    ) -> None:
+                                               dfs,
+                                               show_lr=True
+                                               ) -> None:
         fig = plt.figure(figsize=(10, 10))
         for df_dict in dfs:
             df = df_dict["df"]
             label = df_dict["label"]
-            plt.plot(df['epoch'], df['train_loss'], label=f'{label} train_loss')
-            plt.plot(df['epoch'], df['validation_loss'], label=f'{label} validation_loss')
+            plt.plot(df['epoch'], df['train_loss'],
+                     label=f'{label} train_loss')
+            plt.plot(df['epoch'], df['validation_loss'],
+                     label=f'{label} validation_loss')
             if show_lr:
                 plt.plot(df['epoch'], df['lr'], label=f'{label} lr')
         plt.title('Train and Validation Loss')
@@ -162,7 +171,6 @@ class ModelRunner():
         plt.ylabel('Loss')
         plt.legend()
         plt.show()
-
 
     def generate_dummy_df(self) -> pd.DataFrame:
         return pd.DataFrame({
@@ -180,17 +188,16 @@ class ModelRunner():
                        img1: torch.Tensor,
                        img2: torch.Tensor) -> float:
         psnr = PeakSignalNoiseRatio().to(self.device)
-        return psnr(img1.to(self.device)
-        , img2.to(self.device))
+        return psnr(img1.to(self.device), img2.to(self.device))
 
     def calculate_ssim(self,
-                        img1: torch.Tensor,
-                        img2: torch.Tensor) -> float:
+                       img1: torch.Tensor,
+                       img2: torch.Tensor) -> float:
 
         # add batch dimension, since ssim expects a batch of images and not a single image. And unsqueeze adds a dimension at the specified position
         img1 = img1.unsqueeze(0)
-        img2 = img2.unsqueeze(0)                
-                    
+        img2 = img2.unsqueeze(0)
+
         ssim = StructuralSimilarityIndexMeasure(data_range=1.0).to(self.device)
         return ssim(img1.to(self.device), img2.to(self.device))
 
@@ -201,7 +208,7 @@ class ModelRunner():
 
         pathlist = Path(images_path).rglob('*.png')
         number_of_images = len(list(pathlist))
-    
+
         psnr_dict = {}
         bicubic_psnr_dict = {}
         ssim_dict = {}
@@ -217,10 +224,10 @@ class ModelRunner():
             model = model_dict["model"]
 
             pathlist = Path(images_path).rglob('*.png')
-    
+
             for img_path in tqdm(pathlist):
                 path_in_str = str(img_path)
-                
+
                 image = Image.open(path_in_str)
 
                 transform = transforms.Compose([
@@ -252,16 +259,18 @@ class ModelRunner():
             bicubic_ssim_avg /= number_of_images
             model_ssim_avg /= number_of_images
 
-            psnr_dict[model_name] = model_psnr_avg.item() 
+            psnr_dict[model_name] = model_psnr_avg.item()
             bicubic_psnr_dict[model_name] = bicubic_psnr_avg.item()
             ssim_dict[model_name] = model_ssim_avg.item()
             bicubic_ssim_dict[model_name] = bicubic_ssim_avg.item()
 
-        psnr_df = pd.DataFrame([psnr_dict], index=['PSNR'])        
-        bicubic_psnr_df = pd.DataFrame([bicubic_psnr_dict], index=['Bicubic PSNR'])
+        psnr_df = pd.DataFrame([psnr_dict], index=['PSNR'])
+        bicubic_psnr_df = pd.DataFrame(
+            [bicubic_psnr_dict], index=['Bicubic PSNR'])
         ssim_df = pd.DataFrame([ssim_dict], index=['SSIM'])
-        bicubic_ssim_df = pd.DataFrame([bicubic_ssim_dict], index=['Bicubic SSIM'])
-    
+        bicubic_ssim_df = pd.DataFrame(
+            [bicubic_ssim_dict], index=['Bicubic SSIM'])
+
         return pd.concat([psnr_df, bicubic_psnr_df, ssim_df, bicubic_ssim_df])
 
     def get_model_df(self) -> pd.DataFrame:
@@ -316,6 +325,7 @@ class ModelRunner():
             self.time_array.append(elapsed_time)
             self.lr_array.append(optimizer.param_groups[0]['lr'])
 
+
 def main():
     # Just some example code to test the functions
 
@@ -324,13 +334,14 @@ def main():
 
     model_f2_5 = SRCNN(f2=5).to(device)
     model_f2_1 = SRCNN(f2=1).to(device)
-   
+
     run_srcnn = ModelRunner()
     image_helper = ImageHelper()
 
     # torch.load('./results/srcnn/trained_models/model_f2_5.pth', map_location ='cpu')
 
-    model_f2_5 = run_srcnn.load_model(model_f2_5, "./results/srcnn/trained_models/model_f2_5.pth")
+    model_f2_5 = run_srcnn.load_model(
+        model_f2_5, "./results/srcnn/trained_models/model_f2_5.pth")
     df_f2_5 = run_srcnn.load_df("./results/srcnn/dataframes/model_f2_5.csv")
 
     # model_f2_1 = run_srcnn.load_model(model_f2_1, "./results/srcnn/trained_models/model_f2_1.pth")
@@ -345,9 +356,7 @@ def main():
     # #         {"df": df_f2_1, "label": "f2_1"}
     # #     ]
     # # )
-    
 
 
 if __name__ == "__main__":
     main()
- 
