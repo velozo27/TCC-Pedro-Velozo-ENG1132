@@ -325,6 +325,68 @@ class ModelRunner():
             self.time_array.append(elapsed_time)
             self.lr_array.append(optimizer.param_groups[0]['lr'])
 
+    def get_arrays_from_df(self, df: pd.DataFrame) -> (list, list, list, list, list):
+        epoch_array = df['epoch'].to_list()
+        time_array = df['time'].to_list()
+        lr_array = df['lr'].to_list()
+        train_loss_array = df['train_loss'].to_list()
+        validation_loss_array = df['validation_loss'].to_list()
+
+        return epoch_array, time_array, lr_array, train_loss_array, validation_loss_array
+
+    def train_from_checkpoint(self,
+                model: nn.Module,
+                train_dataloader: torch.utils.data.DataLoader,
+                validation_dataloader: torch.utils.data.DataLoader,
+                optimizer: torch.optim.Optimizer,
+                scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau,
+                df: pd.DataFrame,
+                epoch_array: list,
+                time_array: list,
+                lr_array: list,
+                train_loss_array: list,
+                validation_loss_array: list,
+                start_epoch: int,
+                epochs=10,
+                loss_fn=nn.MSELoss()
+              ) -> None:
+        
+        if df is not None:
+            epoch_array, time_array, lr_array, train_loss_array, validation_loss_array = self.get_arrays_from_df(df)
+
+        self.epoch_array = epoch_array
+        self.time_array = time_array
+        self.lr_array = lr_array
+        self.train_loss_array = train_loss_array
+        self.validation_loss_array = validation_loss_array
+
+
+        for current_epoch in range(start_epoch + 1, epochs):
+            print(f"\nepoch {current_epoch}\n-------------------------------")
+
+            start_time = time.time()
+
+            train_loss = train_loop(
+                train_dataloader, model, loss_fn, optimizer)
+            validation_loss = validation_loop(
+                validation_dataloader, model, loss_fn)
+
+            if scheduler is not None:
+                print(
+                    f"Learning rate (antes): {optimizer.param_groups[0]['lr']}")
+                scheduler.step()
+                print(
+                    f"Learning rate (depois): {optimizer.param_groups[0]['lr']}")
+
+            self.train_loss_array.append(train_loss)
+            self.validation_loss_array.append(validation_loss)
+
+            elapsed_time = time.time() - start_time
+
+            self.epoch_array.append(current_epoch)
+            self.time_array.append(elapsed_time)
+            self.lr_array.append(optimizer.param_groups[0]['lr'])
+
 
 def main():
     # Just some example code to test the functions
