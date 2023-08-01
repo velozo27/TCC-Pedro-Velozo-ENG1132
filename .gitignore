@@ -135,9 +135,11 @@ dmypy.json
 
 *.gz
 
-*.pth
+# *.pth
 
 *-ubyte
 
 
 datasets/*
+
+articles/*
