@@ -64,10 +64,22 @@ class ModelRunner():
         #     model.load_state_dict(torch.load(model_weights_path))
         # except:
 
-    def save_checkpoint(self):
-        # TODO: implement -> https://pytorch.org/tutorials/recipes/recipes/saving_and_loading_a_general_checkpoint.html
-        pass
+    def save_checkpoint(self, model: nn.Module, optimizer: torch.optim.Optimizer, epoch: int, loss: float, path: str) -> None:
+        torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': loss,
+            }, path)
+        
+    def load_checkpoint(self, model: nn.Module, optimizer: torch.optim.Optimizer, path: str) -> None:
+        checkpoint = torch.load(path)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        epoch = checkpoint['epoch']
+        loss = checkpoint['loss']
 
+        return model, optimizer, epoch, loss
 
     def save_model_weights(self, model: nn.Module, model_weights_path: str) -> None:
         torch.save(model.state_dict(), model_weights_path)
