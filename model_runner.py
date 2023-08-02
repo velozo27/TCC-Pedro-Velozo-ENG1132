@@ -201,6 +201,18 @@ class ModelRunner():
         ssim = StructuralSimilarityIndexMeasure(data_range=1.0).to(self.device)
         return ssim(img1.to(self.device), img2.to(self.device))
 
+    def plot_lr_from_df(self, df=None):
+        if df is None:
+            df = self.get_model_df()
+
+        fig = plt.figure(figsize=(10, 10))
+        plt.plot(df['epoch'], df['lr'])
+        plt.title('Learning Rate')
+        plt.xlabel('Epoch')
+        plt.ylabel('Learning Rate')
+        plt.show()
+
+
     def compare_models(self,
                        models,
                        images_path: str
