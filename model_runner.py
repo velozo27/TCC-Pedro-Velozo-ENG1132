@@ -291,16 +291,25 @@ class ModelRunner():
         df.to_csv(model_df_path, index=False)
 
     def train(self,
-              model: nn.Module,
-              train_dataloader: torch.utils.data.DataLoader,
-              validation_dataloader: torch.utils.data.DataLoader,
-              optimizer: torch.optim.Optimizer,
-              scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau,
-              epochs=10, loss_fn=nn.MSELoss()
-              ) -> None:
+          model: nn.Module,
+          train_dataloader: torch.utils.data.DataLoader,
+          validation_dataloader: torch.utils.data.DataLoader,
+          optimizer: torch.optim.Optimizer,
+          scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau,
+          epochs=10,
+          loss_fn=nn.MSELoss(),
+          save_file_path=None
+          ) -> None:
+
+        def save_print_to_file(print_string):
+            if save_file_path is not None:
+                with open(save_file_path, 'a') as f:
+                    f.write(print_string + '\n')
+            print(print_string)
 
         for current_epoch in range(epochs):
-            print(f"\nepoch {current_epoch}\n-------------------------------")
+            epoch_string = f"\nepoch {current_epoch}\n-------------------------------"
+            save_print_to_file(epoch_string)
 
             start_time = time.time()
 
@@ -310,11 +319,11 @@ class ModelRunner():
                 validation_dataloader, model, loss_fn)
 
             if scheduler is not None:
-                print(
-                    f"Learning rate (antes): {optimizer.param_groups[0]['lr']}")
+                lr_before = f"Learning rate (antes): {optimizer.param_groups[0]['lr']}"
                 scheduler.step()
-                print(
-                    f"Learning rate (depois): {optimizer.param_groups[0]['lr']}")
+                lr_after = f"Learning rate (depois): {optimizer.param_groups[0]['lr']}"
+                save_print_to_file(lr_before)
+                save_print_to_file(lr_after)
 
             self.train_loss_array.append(train_loss)
             self.validation_loss_array.append(validation_loss)
@@ -333,7 +342,7 @@ class ModelRunner():
         validation_loss_array = df['validation_loss'].to_list()
 
         return epoch_array, time_array, lr_array, train_loss_array, validation_loss_array
-
+    
     def train_from_checkpoint(self,
                 model: nn.Module,
                 train_dataloader: torch.utils.data.DataLoader,
