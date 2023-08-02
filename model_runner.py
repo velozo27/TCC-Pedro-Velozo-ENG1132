@@ -339,20 +339,21 @@ class ModelRunner():
                 train_dataloader: torch.utils.data.DataLoader,
                 validation_dataloader: torch.utils.data.DataLoader,
                 optimizer: torch.optim.Optimizer,
-                scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau,
-                df: pd.DataFrame,
-                epoch_array: list,
-                time_array: list,
-                lr_array: list,
-                train_loss_array: list,
-                validation_loss_array: list,
-                start_epoch: int,
+                scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau = None,
+                df: pd.DataFrame = None,
+                epoch_array: list = None,
+                time_array: list = None,
+                lr_array: list = None,
+                train_loss_array: list = None,
+                validation_loss_array: list = None,
+                start_epoch: int = None,
                 epochs=10,
                 loss_fn=nn.MSELoss()
               ) -> None:
         
         if df is not None:
             epoch_array, time_array, lr_array, train_loss_array, validation_loss_array = self.get_arrays_from_df(df)
+            start_epoch = epoch_array[-1]
 
         self.epoch_array = epoch_array
         self.time_array = time_array
@@ -360,8 +361,7 @@ class ModelRunner():
         self.train_loss_array = train_loss_array
         self.validation_loss_array = validation_loss_array
 
-
-        for current_epoch in range(start_epoch + 1, epochs):
+        for current_epoch in range(start_epoch + 1, start_epoch + 1 + epochs):
             print(f"\nepoch {current_epoch}\n-------------------------------")
 
             start_time = time.time()
