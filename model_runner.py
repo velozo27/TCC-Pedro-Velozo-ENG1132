@@ -124,7 +124,7 @@ class ModelRunner():
         plt.ylabel('Time (s)')
         plt.show()
 
-    def plot_train_validation_loss_from_df(self, df: pd.DataFrame, show_lr=True) -> None:
+    def plot_train_validation_loss_from_df(self, df: pd.DataFrame = None, show_lr=True) -> None:
         if df is None:
             df = self.get_model_df()
 
@@ -374,6 +374,18 @@ class ModelRunner():
                 lr_after = f"Learning rate (depois): {optimizer.param_groups[0]['lr']}"
                 save_print_to_file(lr_before)
                 save_print_to_file(lr_after)
+
+            self.epoch_array.append(current_epoch)
+            epoch_string = f"Epoch: {current_epoch}"
+            save_print_to_file(epoch_string)
+
+            self.time_array.append(time.time() - start_time)
+            time_string = f"Time: {time.time() - start_time}"
+            save_print_to_file(time_string)
+
+            self.lr_array.append(optimizer.param_groups[0]['lr'])
+            lr_string = f"Learning rate: {optimizer.param_groups[0]['lr']}"
+            save_print_to_file(lr_string)
 
             self.train_loss_array.append(train_loss)
             train_loss_string = f"Train loss: {train_loss}"
