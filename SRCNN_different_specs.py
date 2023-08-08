@@ -70,7 +70,7 @@ class RunSRCNN():
         self.train_loss_array.clear()
         self.validation_loss_array.clear()
 
-    def get_metrics(self) -> tuple[list[int], list[float], list[float], list[float], list[float]]:
+    def get_metrics(self):
         return self.epoch_array, self.time_array, self.lr_array, self.train_loss_array, self.validation_loss_array
                     
     def load_model(self, model: nn.Module, model_weights_path: str) -> torch.nn.Module:        
@@ -92,7 +92,7 @@ class RunSRCNN():
         pass
 
     def plot_time_per_epoch_comparision(self, 
-        dfs: list[pd.DataFrame],
+        dfs,
     ) -> None:
         fig = plt.figure(figsize=(10, 10))
         for df in dfs:
@@ -123,7 +123,7 @@ class RunSRCNN():
         plt.show()
 
     def plot_train_validation_loss_comparision(self,
-        dfs: list[dict[str, pd.DataFrame]],
+        dfs,
         show_lr=True
     ) -> None:
         fig = plt.figure(figsize=(10, 10))
@@ -172,7 +172,7 @@ class RunSRCNN():
         return ssim(img1.to(self.device), img2.to(self.device))
 
     def compare_models(self,
-                       models: list[dict[str, nn.Module]],
+                       models,
                        images_path: str
                        ) -> pd.DataFrame:
 
