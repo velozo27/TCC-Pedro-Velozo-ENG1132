@@ -239,6 +239,7 @@ class ImageHelper:
         device="cuda" if torch.cuda.is_available() else "cpu",
         should_upsample = True,
     ) -> None:
+        print('should_upsample MUST ONLY BE `TRUE` for SRCNN')
         tensor = self.apply_model_to_image(model, image, downsample_factor, unsqueeze=unsqueeze, device=device, should_upsample=should_upsample)
         self.show_tensor_as_image(tensor)
 

@@ -299,6 +299,7 @@ class ModelRunner():
                 else:
                     # model prediction
                     with torch.no_grad():
+                        model = model.to(self.device)
                         model_image = model(input_image.to(self.device))
                     # print('model_image =', model_image.shape)
                     preds = model_image.to(self.device)
@@ -323,6 +324,30 @@ class ModelRunner():
         df = pd.DataFrame.from_dict(result_dict, orient="index")
         return df
 
+    def set_model_arrays(self, epoch_array, time_array, lr_array, train_loss_array, validation_loss_array) -> None:
+        self.epoch_array = epoch_array
+        self.time_array = time_array
+        self.lr_array = lr_array
+        self.train_loss_array = train_loss_array
+        self.validation_loss_array = validation_loss_array
+
+    def create_model_df(self, epoch_array, time_array, lr_array, train_loss_array, validation_loss_array, extra_columns=None, inplace=True) -> pd.DataFrame:
+        if inplace:
+            self.set_model_arrays(epoch_array, time_array, lr_array, train_loss_array, validation_loss_array)
+
+        data = {
+            "epoch": epoch_array,
+            "time": time_array,
+            "lr": lr_array,
+            "train_loss": train_loss_array,
+            "validation_loss": validation_loss_array
+        }
+
+        if extra_columns is not None:
+            data.update(extra_columns)
+
+        return pd.DataFrame(data)
+
     def get_model_df(self) -> pd.DataFrame:
         if self.model_df is None or self.model_df.empty:
             self.model_df = pd.DataFrame({
@@ -336,9 +361,13 @@ class ModelRunner():
         else:
             return self.model_df
 
-    def save_model_df(self, model_df_path: str) -> None:
-        df = self.get_model_df()
-        df.to_csv(model_df_path, index=False)
+    def save_model_df(self, model_df_path: str, df_to_save: pd.DataFrame = None) -> None:
+        if df_to_save is None:
+            df = self.get_model_df()
+            df.to_csv(model_df_path, index=False)
+        else:
+            df_to_save.to_csv(model_df_path, index=False)
+
 
     def train(self,
           model: nn.Module,
