@@ -75,12 +75,17 @@ class CustomImageDataset(Dataset):
           if self._check_if_image_is_not_corrupted(image_path):
             continue
           
-          image_as_tensor = read_image(f"{self.img_dir}/{image_path}")
+          # TODO: see if this affects anything
+          try:
+            image_as_tensor = read_image(f"{self.img_dir}/{image_path}")
 
-          # updating the created tensor
-          image_tensors[current_tensor_index] = image_as_tensor.float() / 255
+            # updating the created tensor
+            image_tensors[current_tensor_index] = image_as_tensor.float() / 255
 
-          current_tensor_index += 1
+            current_tensor_index += 1
+        
+          except Exception as e:
+            print(f"Error loading image file: {self.img_dir}/{image_path}. Reason: {e}")
                     
       return image_tensors
 
