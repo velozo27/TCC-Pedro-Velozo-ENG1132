@@ -57,7 +57,7 @@
 - Métricas:
         ![Alt text](images/dbpn-medium-data-no-noise-metrics.png)
 
-- Exemplo:
+- Exemplo: (ESSA FOTO ESTÁ ERRADA, FOI UPSAMPLED ANTES DO MODELO (Ta com mais de 1000 pixels))
      ![Alt text](images/dbpn-medium-data-no-noise-example.png)
 
 ---
