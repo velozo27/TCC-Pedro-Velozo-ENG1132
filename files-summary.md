@@ -172,6 +172,8 @@
     - Dataset sem noise
     - epochs: 100
 
+---
+
 # SRGAN
 
 - ### srgan.ipynb
@@ -199,3 +201,38 @@
   - optimizerG = optim.Adam(netG.parameters(), lr=0.0002)
   - optimizerD = optim.Adam(netD.parameters(), lr=0.0002)
 
+---
+
+- ### srgan-following-paper.ipynb
+
+- Rodada de testes para ver se os gráficos estavam sendo gerados corretamente. Foi usados menos dados e menos epochs (66 epochs).
+- **Descrição**:
+  Treinamento da SRGAN baseado no notebook: <https://www.youtube.com/watch?v=-p0v6il_Bsc&list=PLe4Ne0krJ2SPyARZ_Xwn7ItDEKze1PYPv&index=67>
+
+- #### Dataset
+  
+  - **Train:**
+    - ../datasets/TRAIN_Flick2k_DIV2K/_128_128_number=10
+    - size:  Training set has 29179 instances
+  - **Validation:**
+    - path: ../datasets/VALIDATION_Flickr2K_DIV2K/_128_128_number=3
+    - size: Validation set has 1888 instances
+
+- #### Paths
+  
+  - **CSV:**
+    - srgan_netG_follwing_paper_df_66_epochs_graphs_are_working.csv
+
+  - **Pesos:**
+    - NetG: srgan_netG_follwing_paper_66_epochs_graphs_are_working
+    - NetD: srgan_netD_follwing_paper_66_epochs_graphs_are_working
+
+- #### Comentários
+
+  - batch_size = round(1*(2**7))
+  - optimizerG = optim.Adam(netG.parameters(), lr=0.0002)
+  - optimizerD = optim.Adam(netD.parameters(), lr=0.0002)
+
+---
+
+- #### **Rodada PARA VALER**
