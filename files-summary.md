@@ -236,3 +236,24 @@
 ---
 
 - #### **Rodada PARA VALER**
+
+- #### srgan-following-paper.ipynb
+
+  - **Descrição**:
+    Treinamento da SRGAN baseado no notebook: <https://www.youtube.com/watch?v=-p0v6il_Bsc&list=PLe4Ne0krJ2SPyARZ_Xwn7ItDEKze1PYPv&index=67>
+    Rodei por 118 epochs e com mais dados. O resultado foi bem melhor.
+
+- #### Dataset
+
+  - **Train:**
+    - path: ../datasets/TRAIN_Flick2k_DIV2K/_128_128_number=30
+    - size:  Training set has 87539 instances
+  - **Validation:**
+    - path: ../datasets/VALIDATION_Flickr2K_DIV2K/_128_128_number=20
+    - size: Validation set has 12592 instances
+
+  - #### Comentários
+
+    - batch_size = round(1*(2**7))
+    - optimizerG = optim.Adam(netG.parameters(), lr=0.0002)
+    - optimizerD = optim.Adam(netD.parameters(), lr=0.0002)
