@@ -170,6 +170,45 @@ class ImageHelper:
             image = Image.open(image)
         tensor = self.downsample_and_upsample_image_as_tensor(image, downsample_factor, interpolation)
         self.show_tensor_as_image(tensor)
+
+    def reshape_image_to_dimensions_to_tensor(
+        self,
+        image: Image or str, new_width: int, new_height: int, interpolation=Image.BICUBIC,
+        unsqueeze: bool = False,
+    ) -> torch.Tensor:
+        if type(image) == str:
+            image = Image.open(image)
+
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Resize((new_height, new_width), interpolation=interpolation),
+        ])
+
+        if unsqueeze:
+            return transform(image).unsqueeze(0)
+
+        return transform(image)
+
+    def crop_image_to_nearest_even_dimensions(self, image: Image) -> Image:
+        width, height = image.size
+        new_width = width
+        new_height = height
+        if width % 2 != 0:
+            new_width = width - 1
+        if height % 2 != 0:
+            new_height = height - 1
+
+        # new_width = width - (width % 2)
+        # new_height = height - (height % 2)
+        return transforms.Compose([
+            transforms.CenterCrop((new_height, new_width)),
+        ])(image)
+
+    def crop_image_to_nearest_even_dimensions_and_transform_to_tensor(self, image: Image) -> Image:
+        image = self.crop_image_to_nearest_even_dimensions(image)
+        return transforms.Compose([
+            transforms.ToTensor(),
+        ])(image)
     
     def apply_model_to_image(
         self,
@@ -200,6 +239,7 @@ class ImageHelper:
         device="cuda" if torch.cuda.is_available() else "cpu",
         should_upsample = True,
     ) -> None:
+        print('should_upsample MUST ONLY BE `TRUE` for SRCNN')
         tensor = self.apply_model_to_image(model, image, downsample_factor, unsqueeze=unsqueeze, device=device, should_upsample=should_upsample)
         self.show_tensor_as_image(tensor)
 
@@ -229,8 +269,8 @@ class ImageHelper:
  
         plt.show()
 
-    def show_tensors_custom_grid_OLD(self, tensors, rows=2, cols=2) -> None:
-        num_tensors = len(tensors)
+
+    def show_tensors_custom_grid(self, tensors, rows=2, cols=2) -> None:
         fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(12, 8))
 
         for index, tensor_dict in enumerate(tensors):

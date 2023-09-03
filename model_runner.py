@@ -86,8 +86,6 @@ class ModelRunner():
 
         return model, df
 
-
-
     def save_model_weights(self, model: nn.Module, model_weights_path: str) -> None:
         torch.save(model.state_dict(), model_weights_path)
 
@@ -126,14 +124,16 @@ class ModelRunner():
         plt.ylabel('Time (s)')
         plt.show()
 
-    def plot_train_validation_loss_from_df(self, df: pd.DataFrame, show_lr=True) -> None:
+    def plot_train_validation_loss_from_df(self, df: pd.DataFrame = None, show_lr=True) -> None:
         if df is None:
             df = self.get_model_df()
 
         fig = plt.figure(figsize=(10, 10))
         plt.plot(df['epoch'], df['train_loss'], label='train_loss')
         plt.plot(df['epoch'], df['validation_loss'], label='validation_loss')
-        plt.plot(df['epoch'], df['lr'], label='lr')
+
+        if show_lr:
+            plt.plot(df['epoch'], df['lr'], label='lr')
         plt.title('Train and Validation Loss')
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
@@ -187,6 +187,12 @@ class ModelRunner():
     def calculate_psnr(self,
                        img1: torch.Tensor,
                        img2: torch.Tensor) -> float:
+        
+        if len(img1.shape) == 4:
+            img1 = img1.squeeze(0)
+        if len(img2.shape) == 4:
+            img2 = img2.squeeze(0)
+
         psnr = PeakSignalNoiseRatio().to(self.device)
         return psnr(img1.to(self.device), img2.to(self.device))
 
@@ -195,9 +201,11 @@ class ModelRunner():
                        img2: torch.Tensor) -> float:
 
         # add batch dimension, since ssim expects a batch of images and not a single image. And unsqueeze adds a dimension at the specified position
-        img1 = img1.unsqueeze(0)
-        img2 = img2.unsqueeze(0)
-
+        if len(img1.shape) == 3:
+            img1 = img1.unsqueeze(0)
+        if len(img2.shape) == 3:
+            img2 = img2.unsqueeze(0)
+            
         ssim = StructuralSimilarityIndexMeasure(data_range=1.0).to(self.device)
         return ssim(img1.to(self.device), img2.to(self.device))
 
@@ -212,78 +220,133 @@ class ModelRunner():
         plt.ylabel('Learning Rate')
         plt.show()
 
-
     def compare_models(self,
                        models,
-                       images_path: str
+                       images_path: str,
+                       scale=3,
+                       show_bicubic=True,
                        ) -> pd.DataFrame:
 
         pathlist = Path(images_path).rglob('*.png')
         number_of_images = len(list(pathlist))
 
-        psnr_dict = {}
-        bicubic_psnr_dict = {}
-        ssim_dict = {}
-        bicubic_ssim_dict = {}
+        if show_bicubic:
+            # add to models dict a bicubic "model""
+            models.append({
+                "name": "Bicubic",
+                "model": None,
+                "scale": scale
+            })
+
+        result_dict = {}  # Dictionary to store both model and bicubic values
 
         for model_dict in models:
             model_psnr_avg = 0
-            bicubic_psnr_avg = 0
             model_ssim_avg = 0
-            bicubic_ssim_avg = 0
-
+            
             model_name = model_dict["name"]
             model = model_dict["model"]
+            
+            scale = model_dict["scale"] if "scale" in model_dict else scale
+            unsqueeze = model_dict["unsqueeze"] if "unsqueeze" in model_dict else False
 
             pathlist = Path(images_path).rglob('*.png')
 
+            # Initialize values for model and bicubic
+            result_dict[model_name] = {
+                "PSNR": 0,
+                "SSIM": 0,
+            }
+
             for img_path in tqdm(pathlist):
                 path_in_str = str(img_path)
-
                 image = Image.open(path_in_str)
+                
+                # Essa código diminui o valor dos PSNR's para todos os modelos. Mas deixa de quebrar os modelos não pre-upsampled (ex: SRCNN)
+                # print()
+                # print('image ANTES =', image.size)
+                image_helper = ImageHelper()
+                # image = image_helper.crop_image_to_nearest_even_dimensions(image)
+                # print('image DEPOIS =', image.size)
 
-                transform = transforms.Compose([
-                    transforms.ToTensor(),
-                    transforms.Resize(
-                        (image.size[1] // 3, image.size[0] // 3), interpolation=Image.BICUBIC),
-                    transforms.Resize(
-                        (image.size[1], image.size[0]), interpolation=Image.BICUBIC)
-                ])
+                if "input_transform" in model_dict:
+                     # custom transform
+                     input_transform = model_dict["input_transform"]
+                else:
+                    # default transform for SRCNN (bicubic downsample and upsample)
+                    def input_transform(input):
+                        return transforms.Compose([
+                            transforms.ToTensor(),
+                            transforms.Resize(
+                                (input.size[1] // scale, input.size[0] // scale), interpolation=Image.BICUBIC),
+                            transforms.Resize(
+                                (input.size[1], input.size[0]), interpolation=Image.BICUBIC)
+                        ])(input)
 
-                bicubic_image = transform(image)
-                model_image = model(bicubic_image.to(self.device))
+                input_image = input_transform(image)
 
-                # target for PSNR metric
+                # some models return a 3D tensor, so we need to unsqueeze it to 4D
+                if unsqueeze:
+                    input_image = input_image.unsqueeze(0)
+                    
                 targets = transforms.ToTensor()(image).to(self.device)
 
-                # bicubic PSNR
-                preds = bicubic_image.to(self.device)
-                bicubic_psnr_avg += self.calculate_psnr(preds, targets)
-                bicubic_ssim_avg += self.calculate_ssim(preds, targets)
+                # targets = image_helper.crop_image_to_nearest_even_dimensions_and_transform_to_tensor(image).to(self.device)
 
-                # model PSNR
-                preds = model_image.to(self.device)
-                model_psnr_avg += self.calculate_psnr(preds, targets)
+                if model_name == "Bicubic":
+                    # bicubic preditcion (we only apply the default transform to the input image) 
+                    preds = input_image.to(self.device)
+                else:
+                    # model prediction
+                    with torch.no_grad():
+                        model = model.to(self.device)
+                        model_image = model(input_image.to(self.device))
+                    # print('model_image =', model_image.shape)
+                    preds = model_image.to(self.device)
+
+                # if model is not None:
+                if model_name is "Bicubic":
+                    pass 
+                elif len(preds.shape) == 4:
+                    targets = image_helper.reshape_image_to_dimensions_to_tensor(image, model_image.shape[3], model_image.shape[2]).to(self.device)
+                else:
+                    targets = image_helper.reshape_image_to_dimensions_to_tensor(image, model_image.shape[2], model_image.shape[1]).to(self.device)
+
+                model_psnr_avg += self.calculate_psnr(preds, targets)    
                 model_ssim_avg += self.calculate_ssim(preds, targets)
-
-            bicubic_psnr_avg /= number_of_images
-            model_psnr_avg /= number_of_images
-            bicubic_ssim_avg /= number_of_images
+    
+            model_psnr_avg /= number_of_images    
             model_ssim_avg /= number_of_images
 
-            psnr_dict[model_name] = model_psnr_avg.item()
-            bicubic_psnr_dict[model_name] = bicubic_psnr_avg.item()
-            ssim_dict[model_name] = model_ssim_avg.item()
-            bicubic_ssim_dict[model_name] = bicubic_ssim_avg.item()
+            result_dict[model_name]["PSNR"] += model_psnr_avg.item()
+            result_dict[model_name]["SSIM"] += model_ssim_avg.item()
 
-        psnr_df = pd.DataFrame([psnr_dict], index=['PSNR'])
-        bicubic_psnr_df = pd.DataFrame(
-            [bicubic_psnr_dict], index=['Bicubic PSNR'])
-        ssim_df = pd.DataFrame([ssim_dict], index=['SSIM'])
-        bicubic_ssim_df = pd.DataFrame(
-            [bicubic_ssim_dict], index=['Bicubic SSIM'])
+        df = pd.DataFrame.from_dict(result_dict, orient="index")
+        return df
 
-        return pd.concat([psnr_df, bicubic_psnr_df, ssim_df, bicubic_ssim_df])
+    def set_model_arrays(self, epoch_array, time_array, lr_array, train_loss_array, validation_loss_array) -> None:
+        self.epoch_array = epoch_array
+        self.time_array = time_array
+        self.lr_array = lr_array
+        self.train_loss_array = train_loss_array
+        self.validation_loss_array = validation_loss_array
+
+    def create_model_df(self, epoch_array, time_array, lr_array, train_loss_array, validation_loss_array, extra_columns=None, inplace=True) -> pd.DataFrame:
+        if inplace:
+            self.set_model_arrays(epoch_array, time_array, lr_array, train_loss_array, validation_loss_array)
+
+        data = {
+            "epoch": epoch_array,
+            "time": time_array,
+            "lr": lr_array,
+            "train_loss": train_loss_array,
+            "validation_loss": validation_loss_array
+        }
+
+        if extra_columns is not None:
+            data.update(extra_columns)
+
+        return pd.DataFrame(data)
 
     def get_model_df(self) -> pd.DataFrame:
         if self.model_df is None or self.model_df.empty:
@@ -298,9 +361,13 @@ class ModelRunner():
         else:
             return self.model_df
 
-    def save_model_df(self, model_df_path: str) -> None:
-        df = self.get_model_df()
-        df.to_csv(model_df_path, index=False)
+    def save_model_df(self, model_df_path: str, df_to_save: pd.DataFrame = None) -> None:
+        if df_to_save is None:
+            df = self.get_model_df()
+            df.to_csv(model_df_path, index=False)
+        else:
+            df_to_save.to_csv(model_df_path, index=False)
+
 
     def train(self,
           model: nn.Module,
@@ -337,14 +404,29 @@ class ModelRunner():
                 save_print_to_file(lr_before)
                 save_print_to_file(lr_after)
 
+            self.epoch_array.append(current_epoch)
+            epoch_string = f"Epoch: {current_epoch}"
+            save_print_to_file(epoch_string)
+
+            self.time_array.append(time.time() - start_time)
+            time_string = f"Time: {time.time() - start_time}"
+            save_print_to_file(time_string)
+
+            self.lr_array.append(optimizer.param_groups[0]['lr'])
+            lr_string = f"Learning rate: {optimizer.param_groups[0]['lr']}"
+            save_print_to_file(lr_string)
+
             self.train_loss_array.append(train_loss)
+            train_loss_string = f"Train loss: {train_loss}"
+            save_print_to_file(train_loss_string)
+
             self.validation_loss_array.append(validation_loss)
+            validation_loss_string = f"Validation loss: {validation_loss}"
+            save_print_to_file(validation_loss_string)
 
             elapsed_time = time.time() - start_time
-
-            self.epoch_array.append(current_epoch)
-            self.time_array.append(elapsed_time)
-            self.lr_array.append(optimizer.param_groups[0]['lr'])
+            time_string = f"Elapsed time: {elapsed_time}"
+            save_print_to_file(time_string)
 
     def get_arrays_from_df(self, df: pd.DataFrame) -> (list, list, list, list, list):
         epoch_array = df['epoch'].to_list()
@@ -443,3 +525,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
