@@ -229,6 +229,35 @@ class ImageHelper:
  
         plt.show()
 
+    def show_tensors_custom_grid_OLD(self, tensors, rows=2, cols=2) -> None:
+        num_tensors = len(tensors)
+        fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(12, 8))
+
+        for index, tensor_dict in enumerate(tensors):
+            row = index // cols
+            col = index % cols
+
+            tensor = tensor_dict['tensor']
+            label = tensor_dict['label']
+
+            try:
+                tensor_np = tensor.cpu().numpy()
+            except:
+                tensor_np = tensor.cpu().detach().numpy()
+
+            try:
+                axes[row, col].imshow(tensor_np.transpose((1, 2, 0)), aspect='auto')
+            except:
+                tensor_np = np.squeeze(tensor_np, axis=0)
+                axes[row, col].imshow(tensor_np.transpose((1, 2, 0)), aspect='auto')
+
+            axes[row, col].set_title(label)
+
+            axes[row, col].axis('off')
+
+        plt.tight_layout()
+        plt.show()
+
     def get_differance_between_tensors(self, tensor1: torch.Tensor, tensor2: torch.Tensor) -> torch.Tensor:
         return torch.abs(tensor1 - tensor2)
 
