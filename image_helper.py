@@ -269,6 +269,7 @@ class ImageHelper:
  
         plt.show()
 
+
     def show_tensors_custom_grid(self, tensors, rows=2, cols=2) -> None:
         fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(12, 8))
 
