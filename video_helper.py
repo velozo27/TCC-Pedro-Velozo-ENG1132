@@ -79,6 +79,9 @@ class VideoHelper:
         downsampled_width = frame_width // downsample_factor
         downsampled_height = frame_height // downsample_factor
 
+        print(f'orginal frame dimensions: frame_width = {frame_width}, frame_height = {frame_height}, fps = {fps}')
+        print(f'downsampled frame dimensions: frame_width = {downsampled_width}, frame_height = {downsampled_height}, fps = {fps}')
+
         # Define the codec and create a VideoWriter object to save the downsampled frames
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # You can change the codec as needed
 
@@ -110,7 +113,7 @@ class VideoHelper:
             index += 1
 
             # Downsample the frame by a the downsample_fatcor in both dimensions
-            downsampled_frame = cv2.resize(frame, None, fx=0.25, fy=0.25, interpolation=cv2.INTER_AREA)
+            downsampled_frame = cv2.resize(frame, None, fx=1/downsample_factor, fy=1/downsample_factor, interpolation=cv2.INTER_AREA)
 
             if index == 1:
                 print('downsampled_frame shape =', downsampled_frame.shape)
