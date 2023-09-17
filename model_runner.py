@@ -2,6 +2,7 @@ import time
 from pathlib import Path
 import torch
 import torch.nn as nn
+import numpy as np
 import pandas as pd
 from torchmetrics import PeakSignalNoiseRatio
 from torchvision import transforms
@@ -92,6 +93,13 @@ class ModelRunner():
     def create_train_loss_plot_from_df_path(self, model_df_path: str, plot_path: str) -> None:
         pass
 
+    def normalize_data(self, data):
+        data = np.array(data)
+        min_val = np.min(data)
+        max_val = np.max(data)
+        normalized_data = (data - min_val) / (max_val - min_val)
+        return normalized_data
+
     def plot_time_per_epoch_comparision(self,
                                         dfs
                                         ) -> None:
@@ -124,9 +132,13 @@ class ModelRunner():
         plt.ylabel('Time (s)')
         plt.show()
 
-    def plot_train_validation_loss_from_df(self, df: pd.DataFrame = None, show_lr=True) -> None:
+    def plot_train_validation_loss_from_df(self, df: pd.DataFrame = None, show_lr=True, normalize=False) -> None:
         if df is None:
             df = self.get_model_df()
+
+        if normalize:
+            df['train_loss'] = self.normalize_data(df['train_loss'])
+            df['validation_loss'] = self.normalize_data(df['validation_loss'])
 
         fig = plt.figure(figsize=(10, 10))
         plt.plot(df['epoch'], df['train_loss'], label='train_loss')
@@ -153,24 +165,59 @@ class ModelRunner():
         plt.show()
 
     def plot_train_validation_loss_comparision(self,
-                                               dfs,
-                                               show_lr=True
-                                               ) -> None:
+                                           dfs,
+                                           show_lr=True,
+                                           show_only_train_loss=False,
+                                           xlim=None,  # Add this parameter for setting x-axis limits
+                                           ylim=None,  # Add this parameter for setting y-axis limits
+                                           ) -> None:
         fig = plt.figure(figsize=(10, 10))
         for df_dict in dfs:
             df = df_dict["df"]
             label = df_dict["label"]
             plt.plot(df['epoch'], df['train_loss'],
-                     label=f'{label} train_loss')
-            plt.plot(df['epoch'], df['validation_loss'],
-                     label=f'{label} validation_loss')
+                    label=f'{label} train_loss')
+            
+            if not show_only_train_loss:
+                plt.plot(df['epoch'], df['validation_loss'],
+                        label=f'{label} validation_loss')
             if show_lr:
                 plt.plot(df['epoch'], df['lr'], label=f'{label} lr')
+
+        # Set the x-axis limits if provided
+        if xlim:
+            plt.xlim(xlim)
+
+        # Set the y-axis limits if provided
+        if ylim:
+            plt.ylim(ylim)
+
         plt.title('Train and Validation Loss')
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
         plt.legend()
         plt.show()
+
+
+    # def plot_train_validation_loss_comparision(self,
+    #                                            dfs,
+    #                                            show_lr=True
+    #                                            ) -> None:
+    #     fig = plt.figure(figsize=(10, 10))
+    #     for df_dict in dfs:
+    #         df = df_dict["df"]
+    #         label = df_dict["label"]
+    #         plt.plot(df['epoch'], df['train_loss'],
+    #                  label=f'{label} train_loss')
+    #         plt.plot(df['epoch'], df['validation_loss'],
+    #                  label=f'{label} validation_loss')
+    #         if show_lr:
+    #             plt.plot(df['epoch'], df['lr'], label=f'{label} lr')
+    #     plt.title('Train and Validation Loss')
+    #     plt.xlabel('Epoch')
+    #     plt.ylabel('Loss')
+    #     plt.legend()
+    #     plt.show()
 
     def generate_dummy_df(self) -> pd.DataFrame:
         return pd.DataFrame({

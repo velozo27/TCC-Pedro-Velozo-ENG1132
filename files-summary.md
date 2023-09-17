@@ -242,6 +242,7 @@
   - **Descrição**:
     Treinamento da SRGAN baseado no notebook: <https://www.youtube.com/watch?v=-p0v6il_Bsc&list=PLe4Ne0krJ2SPyARZ_Xwn7ItDEKze1PYPv&index=67>
     Rodei por 118 epochs e com mais dados. O resultado foi bem melhor.
+    5 min por epoch, total de 590 min = 9.8 horas
 
 - #### Dataset
 
@@ -252,8 +253,45 @@
     - path: ../datasets/VALIDATION_Flickr2K_DIV2K/_128_128_number=20
     - size: Validation set has 12592 instances
 
-  - #### Comentários
+- #### Paths
+  
+  - **CSV:**
+    - srgan_netG_follwing_paper_df_118_epochs_graphs_are_working.csv
 
-    - batch_size = round(1*(2**7))
-    - optimizerG = optim.Adam(netG.parameters(), lr=0.0002)
-    - optimizerD = optim.Adam(netD.parameters(), lr=0.0002)
+  - **Pesos:**
+    - NetG: srgan_netG_follwing_paper_118_epochs_graphs_are_working.pth
+    - NetD: srgan_netD_follwing_paper_118_epochs_graphs_are_working.pth
+
+- #### Comentários
+
+  - batch_size = round(1*(2**7))
+  - optimizerG = optim.Adam(netG.parameters(), lr=0.0002)
+  - optimizerD = optim.Adam(netD.parameters(), lr=0.0002)
+
+- #### srgan-following-paper-with-adjusted-vgg.ipynb
+
+  - **Descrição**:
+    (Igual ao de cima, mas com o VGG ajustado). No caso anterior o VGG não estava sendo implementado corretamente (só era instanciado).
+
+    Treinamento da SRGAN baseado no notebook: <https://www.youtube.com/watch?v=-p0v6il_Bsc&list=PLe4Ne0krJ2SPyARZ_Xwn7ItDEKze1PYPv&index=67>
+
+# TODO: RODAR ESSE MODELO (só rodar, o notebook tá pronto)
+
+- #### Dataset
+
+  - **Train:**
+    - path: ../datasets/TRAIN_Flick2k_DIV2K/_128_128_number=30
+    - size:  Training set has 87539 instances
+  - **Validation:**
+    - path: ../datasets/VALIDATION_Flickr2K_DIV2K/_128_128_number=20
+    - size: Validation set has 12592 instances
+
+- #### Paths
+
+## TODO: GERAR OS PESOS E BOTAR AQUI
+
+- #### Comentários
+
+  - batch_size = round(1*(2**7))
+  - optimizerG = optim.Adam(netG.parameters(), lr=0.0002)
+  - optimizerD = optim.Adam(netD.parameters(), lr=0.0002)

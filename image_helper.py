@@ -4,6 +4,8 @@ from PIL import Image
 from torchvision import transforms
 import numpy as np
 from torchvision.utils import save_image
+import cv2
+
 
 
 class ImageHelper:
@@ -87,7 +89,7 @@ class ImageHelper:
 
     def downsample_image(
         self,
-        image: Image, downsample_factor: int, resample_filter: int
+        image: Image, downsample_factor: int, resample_filter: int = None
     ) -> Image:
         width, height = image.size
         new_width = width // downsample_factor
@@ -270,7 +272,7 @@ class ImageHelper:
         plt.show()
 
 
-    def show_tensors_custom_grid(self, tensors, rows=2, cols=2) -> None:
+    def show_tensors_custom_grid(self, tensors, rows=2, cols=2, show_grid=False) -> None:
         fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(12, 8))
 
         for index, tensor_dict in enumerate(tensors):
@@ -293,7 +295,8 @@ class ImageHelper:
 
             axes[row, col].set_title(label)
 
-            axes[row, col].axis('off')
+            if not show_grid:
+                axes[row, col].axis('off')
 
         plt.tight_layout()
         plt.show()
@@ -304,5 +307,26 @@ class ImageHelper:
     def get_differance_between_image_and_show(self, tensor1: torch.Tensor, tensor2: torch.Tensor) -> torch.Tensor:
         differance = self.get_differance_between_tensors(tensor1, tensor2)
         return differance
+
+    def downsample_frame(self, frame):
+        pil_frame = self.cv2_to_pil(frame)
+        downsampled_frame = self.downsample_image(pil_frame, 15)
+        return self.pil_to_cv2(downsampled_frame)
+
+    ## Helper function for converting opencv images to PIL images
+    def cv2_to_pil(self, img):
+        return Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+
+    # Function to convert PIL image (RGB) to OpenCV image (BGR)
+    def pil_to_cv2(self, pil_img):
+        return cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+    
+    ## Helper function for plotting opencv images in notebook
+    def display_cv2_img(self, img, figsize=(10, 10), show_grid=False):
+        img_ = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        fig, ax = plt.subplots(figsize=figsize)
+        ax.imshow(img_)
+        if not show_grid:
+            ax.axis("off")
 
     

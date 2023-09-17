@@ -137,9 +137,25 @@ class GeneratorLoss(nn.Module):
     self.loss_network = loss_network
     self.mse_loss = nn.MSELoss()
     self.tv_loss = TVLoss()
+ 
   def forward(self, out_labels, out_images, target_images):
+    # Extract features from the intermediate layer of VGG-16
+    out_features = self.loss_network(out_images)
+    target_features = self.loss_network(target_images)
+
+    # Compute the perception loss using feature representations
+    perception_loss = self.mse_loss(out_features, target_features)
+
     adversial_loss = torch.mean(1 - out_labels)
-    perception_loss = self.mse_loss(out_images, target_images)
+
     image_loss = self.mse_loss(out_images, target_images)
     tv_loss = self.tv_loss(out_images)
     return image_loss + 0.001 * adversial_loss + 0.006 * perception_loss + 2e-8 * tv_loss
+
+
+  # def forward(self, out_labels, out_images, target_images):
+  #   adversial_loss = torch.mean(1 - out_labels)
+  #   perception_loss = self.mse_loss(out_images, target_images)
+  #   image_loss = self.mse_loss(out_images, target_images)
+  #   tv_loss = self.tv_loss(out_images)
+  #   return image_loss + 0.001 * adversial_loss + 0.006 * perception_loss + 2e-8 * tv_loss
