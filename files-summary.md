@@ -295,5 +295,3 @@
   - batch_size = round(1*(2**7))
   - optimizerG = optim.Adam(netG.parameters(), lr=0.0002)
   - optimizerD = optim.Adam(netD.parameters(), lr=0.0002)
-
-# TODO: RODAR ISSO SRCNN_different_specs_tecgraf.ipynb
