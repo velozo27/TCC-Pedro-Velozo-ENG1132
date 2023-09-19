@@ -126,7 +126,7 @@
 
 # SRCNN
 
-- ### SRCNN_different_specs.ipynb
+- ### SRCNN_different_specs_tecgraf.ipynb / SRCNN_different_specs_tecgraf_unfiltered.ipynb / SRCNN_different_specs_tecgraf_vgg.ipynb
 
 - **Descrição**:
 
@@ -138,16 +138,16 @@
 
     (patches de 33 x 33)
   - **Train:**
-    - path: ./datasets/Flickr2K_train
-    - size:  Training set has 162186 instances
+    - path: ./datasets/TRAIN_Flick2k_DIV2K/_33_33_number=80
+    - size:  Training set has 97785 instances
   - **Validation:**
-    - path: ./datasets/Flickr2K_validation
-    - size: Validation set has 53000 instances
+    - path: ./datasets/VALIDATION_Flickr2K_DIV2K/_33_33_number=80
+    - size: Validation set has 21091 instances
 
 - #### Paths
 
-  - **CSV:** ./results/srcnn/dataframes/model_f2_5.csv
-  - **Pesos:** ./results/srcnn/trained_models/model_f2_5.pth
+  - **CSV:** ./results/srcnn-tecgraf/dataframes/model_f2_5.csv
+  - **Pesos:** ./results/srcnn-tecgraf/trained_models/model_f2_5.pth
 
 - #### Comentários
 
@@ -170,7 +170,7 @@
     - Adam: lr=1e-3
     - Dataset sem aumgmentation
     - Dataset sem noise
-    - epochs: 100
+    - epochs: 150
 
 ---
 
@@ -295,3 +295,5 @@
   - batch_size = round(1*(2**7))
   - optimizerG = optim.Adam(netG.parameters(), lr=0.0002)
   - optimizerD = optim.Adam(netD.parameters(), lr=0.0002)
+
+# TODO: RODAR ISSO SRCNN_different_specs_tecgraf.ipynb
