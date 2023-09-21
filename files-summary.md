@@ -274,8 +274,7 @@
     (Igual ao de cima, mas com o VGG ajustado). No caso anterior o VGG não estava sendo implementado corretamente (só era instanciado).
 
     Treinamento da SRGAN baseado no notebook: <https://www.youtube.com/watch?v=-p0v6il_Bsc&list=PLe4Ne0krJ2SPyARZ_Xwn7ItDEKze1PYPv&index=67>
-
-# TODO: RODAR ESSE MODELO (só rodar, o notebook tá pronto)
+    Rodei por 150 epochs e com mais dados. O resultado foi melhor (mas nao tanto assim).
 
 - #### Dataset
 
@@ -287,8 +286,12 @@
     - size: Validation set has 12592 instances
 
 - #### Paths
+  - **CSV:**
+  - srgan_netG_with_correct_VGG_follwing_paper_150.csv
 
-## TODO: GERAR OS PESOS E BOTAR AQUI
+  - **Pesos:**
+    - NetG: srgan_netG_with_correct_VGG_follwing_paper_150.pth
+    - NetD: srgan_netD_with_correct_VGG_follwing_paper_150.pth
 
 - #### Comentários
 
