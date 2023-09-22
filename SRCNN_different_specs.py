@@ -11,7 +11,22 @@ from loops import train_loop, validation_loop
 from torchmetrics.image import StructuralSimilarityIndexMeasure
 import matplotlib.pyplot as plt
 from image_helper import ImageHelper
+from torchvision.models.vgg import vgg16
 
+# Define a VGG-based perceptual loss module
+class VGGLoss(nn.Module):
+    def __init__(self, device="cuda" if torch.cuda.is_available() else "cpu"):
+        super(VGGLoss, self).__init__()
+        vgg16_model = vgg16(pretrained=True).to(device)
+        self.feature_extractor = nn.Sequential(*list(vgg16_model.features)[:35]).eval()
+        for param in self.feature_extractor.parameters():
+            param.requires_grad = False
+        self.criterion = nn.MSELoss()
+
+    def forward(self, x, y):
+        x_features = self.feature_extractor(x)
+        y_features = self.feature_extractor(y)
+        return self.criterion(x_features, y_features)
 
 class SRCNN(nn.Module):
     def __init__(self, f2=1):
@@ -264,7 +279,8 @@ class RunSRCNN():
               validation_dataloader: torch.utils.data.DataLoader,
               optimizer: torch.optim.Optimizer,
               scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau,
-              epochs=10, loss_fn=nn.MSELoss()
+              epochs=10, loss_fn=nn.MSELoss(),
+              show_prints=True
               ) -> None:
 
         for current_epoch in range(epochs):
@@ -273,16 +289,19 @@ class RunSRCNN():
             start_time = time.time()
 
             train_loss = train_loop(
-                train_dataloader, model, loss_fn, optimizer)
+                train_dataloader, model, loss_fn, optimizer, show_prints=show_prints)
             validation_loss = validation_loop(
-                validation_dataloader, model, loss_fn)
+                validation_dataloader, model, loss_fn, show_prints=show_prints)
 
             if scheduler is not None:
-                print(
-                    f"Learning rate (antes): {optimizer.param_groups[0]['lr']}")
+                if show_prints:
+                    print(
+                        f"Learning rate (antes): {optimizer.param_groups[0]['lr']}")
                 scheduler.step()
-                print(
-                    f"Learning rate (depois): {optimizer.param_groups[0]['lr']}")
+                
+                if show_prints:
+                    print(
+                        f"Learning rate (depois): {optimizer.param_groups[0]['lr']}")
 
             self.train_loss_array.append(train_loss)
             self.validation_loss_array.append(validation_loss)
@@ -292,6 +311,86 @@ class RunSRCNN():
             self.epoch_array.append(current_epoch)
             self.time_array.append(elapsed_time)
             self.lr_array.append(optimizer.param_groups[0]['lr'])
+
+    def train_with_vgg(self,
+              model: nn.Module,
+              train_dataloader: torch.utils.data.DataLoader,
+              validation_dataloader: torch.utils.data.DataLoader,
+              optimizer: torch.optim.Optimizer,
+              scheduler: torch.optim.lr_scheduler.ReduceLROnPlateau,
+              epochs=10,
+              vgg_loss_weight=0.1,  # Weight for the VGG-based perceptual loss
+              show_prints=True
+              ) -> None:
+        vgg_loss = VGGLoss()  # Instantiate the VGG-based perceptual loss
+
+        for current_epoch in range(epochs):
+            # if show_prints:
+            print(f"\nEpoch {current_epoch}\n-------------------------------")
+
+            start_time = time.time()
+
+            # Training loop
+            model.train()
+            total_train_loss = 0.0
+            for batch_data in train_dataloader:
+                inputs, targets = batch_data
+                outputs = model(inputs)
+                
+                # Compute the VGG-based perceptual loss
+                loss_vgg = vgg_loss(outputs, targets)
+
+                # Calculate the Mean Squared Error (MSE) loss
+                loss_mse = nn.MSELoss()(outputs, targets)
+
+                # Total loss (combining MSE and VGG loss)
+                total_loss = vgg_loss_weight * loss_vgg + (1 - vgg_loss_weight) * loss_mse
+
+                total_loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+
+                # optimizer.zero_grad()
+                # total_loss.backward()
+                # optimizer.step()
+
+                total_train_loss += total_loss.item()
+
+            average_train_loss = total_train_loss / len(train_dataloader)
+
+            # Validation loop
+            model.eval()
+            total_validation_loss = 0.0
+            with torch.no_grad():
+                for batch_data in validation_dataloader:
+                    inputs, targets = batch_data
+                    outputs = model(inputs)
+                    loss = nn.MSELoss()(outputs, targets)
+                    total_validation_loss += loss.item()
+
+            average_validation_loss = total_validation_loss / len(validation_dataloader)
+
+            if scheduler is not None:
+                if show_prints:
+                    print(f"Learning rate (before): {optimizer.param_groups[0]['lr']}")
+                scheduler.step(average_validation_loss)
+
+                if show_prints:
+                    print(f"Learning rate (after): {optimizer.param_groups[0]['lr']}")
+
+            elapsed_time = time.time() - start_time
+
+            self.epoch_array.append(current_epoch)
+            self.time_array.append(elapsed_time)
+            self.lr_array.append(optimizer.param_groups[0]['lr'])
+            self.train_loss_array.append(average_train_loss)
+            self.validation_loss_array.append(average_validation_loss)
+
+            if show_prints:
+                print(f"Average training loss: {average_train_loss:.4f}")
+                print(f"Average validation loss: {average_validation_loss:.4f}")
+                print(f"Elapsed time: {elapsed_time:.2f} seconds\n")
+
 
 def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
