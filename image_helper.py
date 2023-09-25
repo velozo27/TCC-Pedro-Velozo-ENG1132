@@ -272,8 +272,8 @@ class ImageHelper:
         plt.show()
 
 
-    def show_tensors_custom_grid(self, tensors, rows=2, cols=2, show_grid=False) -> None:
-        fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(12, 8))
+    def show_tensors_custom_grid(self, tensors, rows=2, cols=2, show_grid=False, figsize=(12, 8), title_fontsize=14, save_path=None) -> None:
+        fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=figsize)
 
         for index, tensor_dict in enumerate(tensors):
             row = index // cols
@@ -293,13 +293,17 @@ class ImageHelper:
                 tensor_np = np.squeeze(tensor_np, axis=0)
                 axes[row, col].imshow(tensor_np.transpose((1, 2, 0)), aspect='auto')
 
-            axes[row, col].set_title(label)
+            axes[row, col].set_title(label, fontsize=title_fontsize)
 
             if not show_grid:
                 axes[row, col].axis('off')
 
         plt.tight_layout()
-        plt.show()
+
+        if save_path:
+            plt.savefig(save_path, bbox_inches='tight')
+        else:
+            plt.show()
 
     def get_differance_between_tensors(self, tensor1: torch.Tensor, tensor2: torch.Tensor) -> torch.Tensor:
         return torch.abs(tensor1 - tensor2)
